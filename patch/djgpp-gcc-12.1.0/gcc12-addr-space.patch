@@ -1,0 +1,436 @@
+diff --git a/gcc/cp/cp-tree.h b/gcc/cp/cp-tree.h
+index 72177999968..288e1a1b7e5 100644
+--- a/gcc/cp/cp-tree.h
++++ b/gcc/cp/cp-tree.h
+@@ -3331,6 +3331,12 @@ struct GTY(()) lang_decl {
+    && CP_TYPE_VOLATILE_P (TREE_TYPE (TREE_VALUE				 \
+ 				  (TYPE_ARG_TYPES (TREE_TYPE (NODE))))))
+ 
++/* Address space for address-space-qualified non-static member function,
++   meaning `this' is __addr_space (target-specific keyword) X *const.  */
++#define DECL_MEMFUNC_ADDR_SPACE(NODE)					 \
++  (DECODE_QUAL_ADDR_SPACE (TYPE_QUALS (TREE_TYPE (TREE_VALUE		 \
++				  (TYPE_ARG_TYPES (TREE_TYPE (NODE)))))))
++
+ /* Nonzero for a DECL means that this member is a non-static member.  */
+ #define DECL_NONSTATIC_MEMBER_P(NODE)		\
+   (DECL_NONSTATIC_MEMBER_FUNCTION_P (NODE)	\
+@@ -6214,6 +6220,7 @@ enum cp_decl_spec {
+   ds_complex,
+   ds_constinit,
+   ds_consteval,
++  ds_addr_space,
+   ds_thread,
+   ds_type_spec,
+   ds_redefined_builtin_type_spec,
+@@ -6250,6 +6257,8 @@ struct cp_decl_specifier_seq {
+   cp_storage_class storage_class;
+   /* For the __intN declspec, this stores the index into the int_n_* arrays.  */
+   int int_n_idx;
++  /* Named address space.  */
++  addr_space_t addr_space;
+   /* True iff TYPE_SPEC defines a class or enum.  */
+   BOOL_BITFIELD type_definition_p : 1;
+   /* True iff multiple types were (erroneously) specified for this
+diff --git a/gcc/cp/decl.cc b/gcc/cp/decl.cc
+index 2852093d624..821344801e6 100644
+--- a/gcc/cp/decl.cc
++++ b/gcc/cp/decl.cc
+@@ -5276,6 +5276,8 @@ get_type_quals (const cp_decl_specifier_seq *declspecs)
+     type_quals |= TYPE_QUAL_VOLATILE;
+   if (decl_spec_seq_has_spec_p (declspecs, ds_restrict))
+     type_quals |= TYPE_QUAL_RESTRICT;
++  if (decl_spec_seq_has_spec_p (declspecs, ds_addr_space))
++    type_quals |= ENCODE_QUAL_ADDR_SPACE (declspecs->addr_space);
+ 
+   return type_quals;
+ }
+@@ -8347,6 +8349,16 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
+ 	  return;
+ 	}
+ 
++      /* Diagnose incorrect usage of address-space specifiers.  */
++      if (!ADDR_SPACE_GENERIC_P (DECODE_QUAL_ADDR_SPACE (cp_type_quals
++							 (TREE_TYPE (decl))))
++	  && !(dk == dk_thread || dk == dk_static))
++	{
++	  error_at (DECL_SOURCE_LOCATION (decl),
++		    "address-space-qualified local variable");
++	  return;
++	}
++
+       /* If this is a local variable that will need a mangled name,
+ 	 register it now.  We must do this before processing the
+ 	 initializer for the variable, since the initialization might
+@@ -13402,6 +13414,14 @@ grokdeclarator (const cp_declarator *declarator,
+ 
+   /* Now TYPE has the actual type.  */
+ 
++  /* Diagnose incorrect usage of address-space specifiers.  */
++  if (decl_context == FIELD && storage_class != sc_static && !typedef_p
++      && !ADDR_SPACE_GENERIC_P (DECODE_QUAL_ADDR_SPACE (cp_type_quals (type))))
++    {
++      error_at (id_loc, "address-space-qualified field");
++      return error_mark_node;
++    }
++
+   if (returned_attrs)
+     {
+       if (attrlist)
+@@ -14553,7 +14573,16 @@ require_complete_types_for_parms (tree parms)
+     {
+       if (dependent_type_p (TREE_TYPE (parms)))
+ 	continue;
+-      if (!VOID_TYPE_P (TREE_TYPE (parms))
++
++      /* Diagnose incorrect usage of address-space specifiers.  */
++      if (!ADDR_SPACE_GENERIC_P (DECODE_QUAL_ADDR_SPACE (cp_type_quals
++							 (TREE_TYPE (parms)))))
++	{
++	  error_at (DECL_SOURCE_LOCATION (parms),
++		    "address-space-qualified function parameter");
++	  TREE_TYPE (parms) = error_mark_node;
++	}
++      else if (!VOID_TYPE_P (TREE_TYPE (parms))
+ 	  && complete_type_or_else (TREE_TYPE (parms), parms))
+ 	{
+ 	  relayout_decl (parms);
+@@ -16891,6 +16920,12 @@ check_function_type (tree decl, tree current_function_parms)
+     }
+   else
+     {
++      /* Diagnose incorrect usage of address-space specifiers.  */
++      if (!ADDR_SPACE_GENERIC_P (DECODE_QUAL_ADDR_SPACE (cp_type_quals
++							 (return_type))))
++	error_at (DECL_SOURCE_LOCATION (decl),
++		  "function returns address-space-qualified type");
++
+       abstract_virtuals_error (decl, TREE_TYPE (fntype));
+       maybe_warn_parm_abi (TREE_TYPE (fntype),
+ 			   DECL_SOURCE_LOCATION (decl));
+diff --git a/gcc/cp/mangle.cc b/gcc/cp/mangle.cc
+index eb53e0ebeb4..e6451c39e87 100644
+--- a/gcc/cp/mangle.cc
++++ b/gcc/cp/mangle.cc
+@@ -1122,6 +1122,20 @@ write_nested_name (const tree decl)
+   if (TREE_CODE (decl) == FUNCTION_DECL
+       && DECL_NONSTATIC_MEMBER_FUNCTION_P (decl))
+     {
++      addr_space_t as = DECL_MEMFUNC_ADDR_SPACE (decl);
++      if (!ADDR_SPACE_GENERIC_P (as))
++	{
++	  if (abi_warn_or_compat_version_crosses (10))
++	    G.need_abi_warning = true;
++	  if (abi_version_at_least (10))
++	    {
++	      char buf[8];
++	      sprintf(buf, "AS%u", as);
++	      write_char ('U');
++	      write_unsigned_number (strlen (buf));
++	      write_string (buf);
++	    }
++	}
+       if (DECL_VOLATILE_MEMFUNC_P (decl))
+ 	write_char ('V');
+       if (DECL_CONST_MEMFUNC_P (decl))
+@@ -2509,6 +2523,24 @@ write_CV_qualifiers_for_type (const tree type)
+      array.  */
+   cp_cv_quals quals = TYPE_QUALS (type);
+ 
++  /* Mangle named address space as extended qualifier.  */
++  addr_space_t as = DECODE_QUAL_ADDR_SPACE (quals);
++  if (!ADDR_SPACE_GENERIC_P (as))
++  {
++    if (abi_warn_or_compat_version_crosses (10))
++      G.need_abi_warning = true;
++    if (abi_version_at_least (10))
++      {
++	char buf[8];
++	sprintf(buf, "AS%u", as);
++	write_char ('U');
++	write_unsigned_number (strlen (buf));
++	write_string (buf);
++
++	++num_qualifiers;
++      }
++  }
++
+   if (quals & TYPE_QUAL_RESTRICT)
+     {
+       write_char ('r');
+diff --git a/gcc/cp/parser.cc b/gcc/cp/parser.cc
+index 2235da10c7c..b9b91560254 100644
+--- a/gcc/cp/parser.cc
++++ b/gcc/cp/parser.cc
+@@ -19261,6 +19261,10 @@ static GTY(()) vec<tree, va_gc> *cp_parser_decl_specs_attrs;
+ 
+    type-specifier:
+      __complex__
++     address-space
++
++   address-space:
++     identifier recognized by the target
+ 
+    Returns a representation of the type-specifier.  For a
+    class-specifier, enum-specifier, or elaborated-type-specifier, a
+@@ -19405,6 +19409,14 @@ cp_parser_type_specifier (cp_parser* parser,
+       break;
+ 
+     default:
++      /* Look for a named address space specifier (GNU extension)  */
++      if (keyword >= RID_FIRST_ADDR_SPACE
++	  && keyword <= RID_LAST_ADDR_SPACE)
++	{
++	  ds = ds_addr_space;
++	  if (is_cv_qualifier)
++	    *is_cv_qualifier = true;
++	}
+       break;
+     }
+ 
+@@ -23777,6 +23789,10 @@ cp_parser_ptr_operator (cp_parser* parser,
+ 
+    cv-qualifier:
+      __restrict__
++     address-space
++
++   address-space:
++     identifier recognized by the target
+ 
+    Returns a bitmask representing the cv-qualifiers.  */
+ 
+@@ -23784,6 +23800,7 @@ static cp_cv_quals
+ cp_parser_cv_qualifier_seq_opt (cp_parser* parser)
+ {
+   cp_cv_quals cv_quals = TYPE_UNQUALIFIED;
++  addr_space_t addr_space = ADDR_SPACE_GENERIC;
+ 
+   while (true)
+     {
+@@ -23792,6 +23809,31 @@ cp_parser_cv_qualifier_seq_opt (cp_parser* parser)
+ 
+       /* Peek at the next token.  */
+       token = cp_lexer_peek_token (parser->lexer);
++
++      /* Look for an optional named address space specifier (GNU extension)  */
++      if (token->keyword >= RID_FIRST_ADDR_SPACE
++	  && token->keyword <= RID_LAST_ADDR_SPACE)
++	{
++	  if (!ADDR_SPACE_GENERIC_P (addr_space))
++	    {
++	      gcc_rich_location richloc (token->location);
++	      if (addr_space != token->keyword - RID_FIRST_ADDR_SPACE)
++		error_at (&richloc, "conflicting address space specifiers");
++	      else
++		{
++		  richloc.add_fixit_remove ();
++		  error_at (&richloc, "duplicate address space specifier");
++		}
++	      cp_lexer_purge_token (parser->lexer);
++	    }
++	  else
++	    {
++	      addr_space = token->keyword - RID_FIRST_ADDR_SPACE;
++	      cp_lexer_consume_token (parser->lexer);
++	    }
++	  continue;
++	}
++
+       /* See if it's a cv-qualifier.  */
+       switch (token->keyword)
+ 	{
+@@ -23829,6 +23871,7 @@ cp_parser_cv_qualifier_seq_opt (cp_parser* parser)
+ 	}
+     }
+ 
++  cv_quals |= ENCODE_QUAL_ADDR_SPACE (addr_space);
+   return cv_quals;
+ }
+ 
+@@ -32699,6 +32742,8 @@ set_and_check_decl_spec_loc (cp_decl_specifier_seq *decl_specs,
+       decl_specs->locations[ds] = location;
+       if (ds == ds_thread)
+ 	decl_specs->gnu_thread_keyword_p = token_is__thread (token);
++      if (ds == ds_addr_space)
++	decl_specs->addr_space = token->keyword - RID_FIRST_ADDR_SPACE;
+     }
+   else
+     {
+@@ -32731,6 +32776,17 @@ set_and_check_decl_spec_loc (cp_decl_specifier_seq *decl_specs,
+ 	      error_at (&richloc, "duplicate %qD", token->u.value);
+ 	    }
+ 	}
++      else if (ds == ds_addr_space)
++	{
++	  gcc_rich_location richloc (location);
++	  if (decl_specs->addr_space != token->keyword - RID_FIRST_ADDR_SPACE)
++	    error_at (&richloc, "conflicting address space specifiers");
++	  else
++	    {
++	      richloc.add_fixit_remove ();
++	      error_at (&richloc, "duplicate address space specifier");
++	    }
++	}
+       else
+ 	{
+ 	  static const char *const decl_spec_names[] = {
+diff --git a/gcc/cp/pt.cc b/gcc/cp/pt.cc
+index 7758758f40d..5223412980d 100644
+--- a/gcc/cp/pt.cc
++++ b/gcc/cp/pt.cc
+@@ -12225,6 +12225,12 @@ instantiate_class_template_1 (tree type)
+ 			      error ("flexible array member %qD in union", r);
+ 			      TREE_TYPE (r) = error_mark_node;
+ 			    }
++			  else if (!ADDR_SPACE_GENERIC_P (TYPE_ADDR_SPACE
++							  (rtype)))
++			    {
++			      error ("address-space-qualified field %qD", r);
++			      TREE_TYPE (r) = error_mark_node;
++			    }
+ 			  else if (!verify_type_context (input_location,
+ 							 TCTX_FIELD, rtype))
+ 			    TREE_TYPE (r) = error_mark_node;
+@@ -15547,6 +15553,27 @@ tsubst_tree_list (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+   return chain;
+ }
+ 
++/* Combine qualifiers from types A and B, emitting an error message when
++   incompatible address-space qualifiers are used.  */
++
++static int
++combine_type_quals (tree a, tree b)
++{
++  const int qa = cp_type_quals (a);
++  const int qb = cp_type_quals (b);
++  const addr_space_t asa = DECODE_QUAL_ADDR_SPACE (qa);
++  const addr_space_t asb = DECODE_QUAL_ADDR_SPACE (qb);
++
++  if (asa != asb && !ADDR_SPACE_GENERIC_P (asa) && !ADDR_SPACE_GENERIC_P (asb))
++    {
++      error ("combining address-space specifiers %qs and %qs",
++	     c_addr_space_name (asa), c_addr_space_name (asb));
++      return CLEAR_QUAL_ADDR_SPACE (qa | qb);
++    }
++
++  return qa | qb;
++}
++
+ /* Take the tree structure T and replace template parameters used
+    therein with the argument vector ARGS.  IN_DECL is an associated
+    decl for diagnostics.  If an error occurs, returns ERROR_MARK_NODE.
+@@ -15626,7 +15653,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 	{
+ 	  r = TREE_TYPE (r);
+ 	  r = cp_build_qualified_type_real
+-	    (r, cp_type_quals (t) | cp_type_quals (r),
++	    (r, combine_type_quals (t, r),
+ 	     complain | tf_ignore_bad_quals);
+ 	  return r;
+ 	}
+@@ -15781,7 +15808,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 
+ 		gcc_assert (TYPE_P (arg));
+ 
+-		quals = cp_type_quals (arg) | cp_type_quals (t);
++		quals = combine_type_quals (arg, t);
+ 
+ 		return cp_build_qualified_type_real
+ 		  (arg, quals, complain | tf_ignore_bad_quals);
+@@ -15849,7 +15876,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 					    /*entering_scope=*/0,
+ 					   complain);
+ 		return cp_build_qualified_type_real
+-		  (r, cp_type_quals (t) | cp_type_quals (r), complain);
++		  (r, combine_type_quals (t, r), complain);
+ 	      }
+ 	    else if (code == TEMPLATE_TEMPLATE_PARM)
+ 	      return arg;
+@@ -16266,7 +16293,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 	  }
+ 
+ 	return cp_build_qualified_type_real
+-	  (f, cp_type_quals (f) | cp_type_quals (t), complain);
++	  (f, combine_type_quals (f, t), complain);
+       }
+ 
+     case UNBOUND_CLASS_TEMPLATE:
+@@ -16300,8 +16327,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 
+ 	type = finish_typeof (type);
+ 	return cp_build_qualified_type_real (type,
+-					     cp_type_quals (t)
+-					     | cp_type_quals (type),
++					     combine_type_quals (t, type),
+ 					     complain);
+       }
+ 
+@@ -16339,8 +16365,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
+ 	    type = finish_decltype_type (type, id, complain);
+ 	  }
+ 	return cp_build_qualified_type_real (type,
+-					     cp_type_quals (t)
+-					     | cp_type_quals (type),
++					     combine_type_quals (t, type),
+ 					     complain | tf_ignore_bad_quals);
+       }
+ 
+diff --git a/gcc/cp/tree.cc b/gcc/cp/tree.cc
+index ed0d0d22950..94a14b6f92f 100644
+--- a/gcc/cp/tree.cc
++++ b/gcc/cp/tree.cc
+@@ -6032,13 +6032,25 @@ cp_free_lang_data (tree t)
+     DECL_CHAIN (t) = NULL_TREE;
+ }
+ 
+-/* Stub for c-common.  Please keep in sync with c-decl.cc.
++/* Register reserved keyword WORD as qualifier for address space AS.
+    FIXME: If address space support is target specific, then this
+    should be a C target hook.  But currently this is not possible,
+    because this function is called via REGISTER_TARGET_PRAGMAS.  */
+ void
+-c_register_addr_space (const char * /*word*/, addr_space_t /*as*/)
++c_register_addr_space (const char * word, addr_space_t as)
+ {
++  int rid = RID_FIRST_ADDR_SPACE + as;
++  tree id;
++
++  /* Address space qualifiers are only supported
++     in C++ with GNU extensions enabled.  */
++  if (c_dialect_objc () || flag_no_asm)
++    return;
++
++  id = get_identifier (word);
++  C_SET_RID_CODE (id, rid);
++  set_identifier_kind (id, cik_keyword);
++  ridpointers [rid] = id;
+ }
+ 
+ /* Return the number of operands in T that we care about for things like
+diff --git a/gcc/cp/typeck.cc b/gcc/cp/typeck.cc
+index 0da6f2485d0..cf4f58ae381 100644
+--- a/gcc/cp/typeck.cc
++++ b/gcc/cp/typeck.cc
+@@ -1796,8 +1796,8 @@ layout_compatible_type_p (tree type1, tree type2)
+ bool
+ at_least_as_qualified_p (const_tree type1, const_tree type2)
+ {
+-  int q1 = cp_type_quals (type1);
+-  int q2 = cp_type_quals (type2);
++  int q1 = CLEAR_QUAL_ADDR_SPACE (cp_type_quals (type1));
++  int q2 = CLEAR_QUAL_ADDR_SPACE (cp_type_quals (type2));
+ 
+   /* All qualifiers for TYPE2 must also appear in TYPE1.  */
+   return (q1 & q2) == q2;
+@@ -10801,6 +10801,11 @@ comp_ptr_ttypes_real (tree to, tree from, int constp)
+ 	      to_more_cv_qualified = true;
+ 	    }
+ 
++	  /* Ensure that both point to the same address space.  */
++	  if (DECODE_QUAL_ADDR_SPACE (cp_type_quals (from))
++	      != DECODE_QUAL_ADDR_SPACE (cp_type_quals (to)))
++	    return false;
++
+ 	  if (constp > 0)
+ 	    constp &= TYPE_READONLY (to);
+ 	}
