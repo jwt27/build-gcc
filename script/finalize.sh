@@ -28,6 +28,8 @@ export PATH="${PREFIX}/${TARGET}/bin/:${PREFIX}/bin/:\$PATH"
 export GCC_EXEC_PREFIX="${PREFIX}/lib/gcc/"
 export MANPATH="${PREFIX}/${TARGET}/share/man:${PREFIX}/share/man:\$MANPATH"
 export INFOPATH="${PREFIX}/${TARGET}/share/info:${PREFIX}/share/info:\$INFOPATH"
+export PKG_CONFIG_LIBDIR="${PREFIX}/${TARGET}/lib/pkgconfig:${PREFIX}/${TARGET}/share/pkgconfig"
+unset PKG_CONFIG_PATH
 STOP
 
 cat << STOP > ${BASE}/build/${TARGET}-setenv.cmd
@@ -56,9 +58,10 @@ if [ ! -z "$(get_version watt32)" ]; then
   echo "set WATT_ROOT=${WATT_ROOT}" >> ${BASE}/build/${TARGET}-setenv.cmd
 
   ${TARGET}-gcc -dumpspecs > ${BASE}/build/specs
-  spec_option="%{!mno-watt:-isystem ${WATT_INCLUDE}}"
-  sed -i "/\*cpp:/{n;s#\(.*\)#${spec_option} \1#}" ${BASE}/build/specs
-  sed -i "/\*cc1plus:/{n;s#\(.*\)#${spec_option} \1#}" ${BASE}/build/specs
+
+  for i in cpp cc1plus; do
+    sed -i "/\*$i:/{n;s#\(.*\)#-isystem ${WATT_INCLUDE} \1#}" ${BASE}/build/specs
+  done
 
   echo "Installing specs file"
   install_files ${BASE}/build/specs ${DST}/lib/gcc/${TARGET}/$(get_version gcc)/ || exit 1
