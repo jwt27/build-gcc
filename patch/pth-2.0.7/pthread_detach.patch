@@ -1,0 +1,11 @@
+--- a/pthread.h.in        2022-05-25 04:00:33.766802264 +0200
++++ b/pthread.h.in        2022-05-25 04:00:36.538771533 +0200
+@@ -346,7 +346,7 @@
+ /* thread routines */
+ extern int       pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
+ extern int       __pthread_detach(pthread_t);
+-#define          pthread_detach(t) __pthread_detach(t)
++#define          pthread_detach __pthread_detach
+ extern pthread_t pthread_self(void);
+ extern int       pthread_equal(pthread_t, pthread_t);
+ extern int       pthread_yield_np(void);

@@ -9,13 +9,14 @@ If you require compatibility with distributions that use `i586`, you can either:
 * 2020-02-07: setenv script is now installed to `$PREFIX/bin/$TARGET-setenv`.
 * 2019-06-06: `master` is now the default branch again.
 
-### Current package versions, as of 2022-05-23:
+### Current package versions, as of 2022-05-24:
 
 * gcc 12.1.0
 * binutils 2.38
 * gdb 12.1
 * djgpp 2.05 / cvs
 * watt-32 git
+* pth 2.0.7
 * newlib 4.1.0
 * avr-libc 2.1.0
 * avrdude 6.4
@@ -95,6 +96,7 @@ BINUTILS_CONFIGURE_OPTIONS= # Same, for binutils
 GDB_CONFIGURE_OPTIONS=      # Same, for gdb
 NEWLIB_CONFIGURE_OPTIONS=   # Same, for newlib
 AVRLIBC_CONFIGURE_OPTIONS=  # Same, for avr-libc
+PTH_CONFIGURE_OPTIONS=      # Same, for pth
 CFLAGS_FOR_TARGET=          # CFLAGS used to build target libraries
 HOST=                       # The platform you are building for, when building a cross-cross compiler
 BUILD=                      # The platform you are building on (auto-detected)

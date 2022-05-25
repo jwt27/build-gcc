@@ -21,7 +21,17 @@ prepend GCC_CONFIGURE_OPTIONS "--disable-nls
 prepend GDB_CONFIGURE_OPTIONS "--disable-werror
                                --disable-nls"
 
+prepend PTH_CONFIGURE_OPTIONS "--with-mctx-mth=sjlj
+                               --with-mctx-dsp=sjljlx
+                               --enable-optimize
+                               --enable-pthread"
+
+if [ ! -z $(get_version pth) ]; then
+  GCC_CONFIGURE_OPTIONS+=" --enable-threads=posix"
+fi
+
 DEPS=""
+[ ! -z ${PTH_VERSION} ] && DEPS+=" watt32 gcc djgpp binutils"
 [ ! -z ${WATT32_VERSION} ] && DEPS+=" gcc djgpp binutils"
 [ ! -z ${GCC_VERSION} ] && DEPS+=" djgpp binutils"
 [ ! -z ${DJGPP_VERSION} ] && DEPS+=" binutils gcc"
@@ -92,6 +102,65 @@ if [ ! -z ${WATT32_VERSION} ]; then
     ${MAKE_J} -f djgpp.mak clean
   fi
   ./configur.sh clean || exit 1
+fi
+
+cd ${BASE}/build/ || exit 1
+
+if [ ! -z ${PTH_VERSION} ]; then
+  echo "Building Pth..."
+
+  mkdir -p pth-${PTH_VERSION}
+  cd pth-${PTH_VERSION}/ || exit 1
+  unzip -uoq ${BASE}/download/$(basename ${PTH_ARCHIVE}) || exit 1
+  cd src/pth-${PTH_VERSION}/ || exit 1
+
+  dos2unix *
+  chmod +x configure config.guess config.sub shtool
+
+  cat ${BASE}/patch/pth-${PTH_VERSION}/* | patch -p1 -u || exit 1
+
+  mkdir -p build
+  cd build/ || exit 1
+
+  TEMP_CC="${CC}"
+  TEMP_CFLAGS="${CFLAGS}"
+
+  export CC="${PTH_CC}"
+  export CFLAGS="${CFLAGS_FOR_TARGET}"
+  unset CPPFLAGS
+
+  # Check if $PTH_CC has Watt-32 installed
+  if ! echo "#include <sys/wtypes.h>" | ${PTH_CC} -E -x c - > /dev/null 2>&1; then
+    export CPPFLAGS="-isystem ${BASE}/build/Watt-32/inc"
+  fi
+
+  PTH_CONFIGURE_OPTIONS+="--host=${TARGET} --prefix=\"${PREFIX}/${TARGET}\""
+  strip_whitespace PTH_CONFIGURE_OPTIONS
+
+  if [ ! -e configure-options ] || [ ! "$(cat configure-options)" == "${PTH_CONFIGURE_OPTIONS}" ]; then
+    ${MAKE_J} clean
+    eval "../configure ${PTH_CONFIGURE_OPTIONS}" || exit 1
+    echo ${PTH_CONFIGURE_OPTIONS} > configure-options
+  else
+    echo "Note: Pth already configured.  To force a rebuild, use: rm -rf $(pwd)"
+    sleep 5
+  fi
+
+  ${MAKE_J} pth_p.h || exit 1
+  ${MAKE_J} || exit 1
+
+  echo "Installing Pth..."
+  ${SUDO} ${MAKE} install || exit 1
+
+  for i in pthread-config pthsem-config; do
+    ln -fs "../${TARGET}/bin/$i" "${DST}/bin/${TARGET}-$i"
+  done
+
+  unset CPPFLAGS
+  export CC="${TEMP_CC}"
+  export CFLAGS="${TEMP_CFLAGS}"
+
+  set_version pth
 fi
 
 cd ${BASE}/build/ || exit 1
@@ -310,6 +379,8 @@ if [ ! -z ${WATT32_VERSION} ]; then
 
   set_version watt32
 fi
+
+cd ${BASE}/build/ || exit 1
 
 if [ ! -z ${GCC_VERSION} ]; then
   echo "Building gcc (stage 2)"

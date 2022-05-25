@@ -1,13 +1,6 @@
 if [ -z ${IGNORE_DEPENDENCIES} ]; then
   for DEP in ${DEPS}; do
-    case $DEP in
-      djgpp)    [ -z "$(get_version djgpp)" ]    && add_pkg djgpp ;;
-      newlib)   [ -z "$(get_version newlib)" ]   && add_pkg newlib ;;
-      avr-libc) [ -z "$(get_version avr-libc)" ] && add_pkg avr-libc ;;
-      binutils) [ -z "$(get_version binutils)" ] && add_pkg binutils ;;
-      gcc)      [ -z "$(get_version gcc)" ]      && add_pkg gcc ;;
-      gdb)      [ -z "$(get_version gdb)" ]      && add_pkg gdb ;;
-    esac
+    [ -z "$(get_version ${DEP})" ] && add_pkg ${DEP}
   done
 fi
 
@@ -113,6 +106,7 @@ echo "You are about to build and install:"
 [ -z ${AVARICE_VERSION} ]  || echo "    - AVaRICE ${AVARICE_VERSION}"
 [ -z ${SIMULAVR_VERSION} ] || echo "    - SimulAVR ${SIMULAVR_VERSION}"
 [ -z ${WATT32_VERSION} ]   || echo "    - Watt-32 ${WATT32_VERSION}"
+[ -z ${PTH_VERSION} ]      || echo "    - Pth ${PTH_VERSION}"
 
 echo ""
 echo "With the following options:"
@@ -153,7 +147,33 @@ fi
 if [ ! -z ${AVRLIBC_VERSION} ]; then
   echo "    AVRLIBC_CONFIGURE_OPTIONS=`echo ${AVRLIBC_CONFIGURE_OPTIONS}`"
 fi
+if [ ! -z ${PTH_VERSION} ]; then
+  echo "    PTH_CONFIGURE_OPTIONS=`echo ${PTH_CONFIGURE_OPTIONS}`"
+fi
 echo ""
+
+if [ ! -z ${PTH_VERSION} ]; then
+  if [ ! -z ${GCC_VERSION} ]; then
+    echo "NOTE: You are building pth and gcc together.  gcc will be configured
+      with --enable-threads.  This configuration requires a complete toolchain,
+      configured for the same \$TARGET, to be previously installed and available
+      in your \$PATH."
+    PTH_CC="$(which ${TARGET}-gcc)"
+    [ -z "${PTH_CC}" ] && exit 1
+    echo "The following compiler will be used to build pth: ${PTH_CC}"
+  elif [ ! -z $(get_version gcc) ]; then
+    echo "NOTE: You are building pth stand-alone, gcc is already installed.
+      gcc will NOT be rebuilt with --enable-threads.
+      If you later upgrade this gcc installation, the new version WILL be
+      configured with --enable-threads."
+    PTH_CC=${TARGET}-gcc
+  fi
+  echo ""
+elif [ ! -z $(get_version pth) ] && [ ! -z ${GCC_VERSION} ]; then
+  echo "NOTE: You are installing gcc in a location where pth is already
+      installed.  gcc will be configured with --enable-threads."
+  echo ""
+fi
 
 mkdir -p ${DST} 2> /dev/null
 
