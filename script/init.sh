@@ -168,9 +168,7 @@ if [ -z "${ANY_PACKAGES_SPECIFIED}" ]; then
   echo "    --target=[...]"
   echo "    --enable-languages=[...]"
   echo "Available packages:"
-  for DIR in ${PACKAGE_SOURCES}; do
-    ls $DIR
-  done
+  find ${PACKAGE_SOURCES} -type f | xargs -n 1 basename | sort -u | column
   exit 1
 fi
 
