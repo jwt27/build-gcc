@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DJGPP_DOWNLOAD_BASE="http://www.mirrorservice.org/sites/ftp.delorie.com/pub"
-PACKAGE_SOURCES="djgpp common"
+PACKAGE_SOURCES="djgpp binutils common"
 source script/init.sh
 
 case $TARGET in
