@@ -1,0 +1,89 @@
+From c339b0d7c1d0c98274be6ea6db93ad477dbfe530 Mon Sep 17 00:00:00 2001
+From: Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+Date: Mon, 23 Aug 2021 20:57:14 +0000
+Subject: [PATCH] patch #40 Remove old style exception throw specifier
+
+Submitted by Joris Putcuyps
+
+resolves bug #34 AVaRICE 2.14 won't compile on Arch Linux
+
+
+
+
+git-svn-id: svn://svn.code.sf.net/p/avarice/code/trunk/avarice@391 a7e36acc-7495-4a18-91ca-7b9a7881be12
+---
+ ChangeLog      | 10 ++++++++++
+ NEWS           |  5 +++--
+ src/jtag2.h    |  2 +-
+ src/jtag2io.cc |  1 -
+ src/jtag3.h    |  4 ++--
+ src/jtag3io.cc |  2 --
+ 6 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/src/jtag2.h b/src/jtag2.h
+index f763594..3497fb8 100644
+--- a/src/jtag2.h
++++ b/src/jtag2.h
+@@ -156,7 +156,7 @@ class jtag2: public jtag
+     **/
+     void doJtagCommand(uchar *command, int  commandSize,
+ 		       uchar *&response, int &responseSize,
+-		       bool retryOnTimeout = true) throw(jtag_exception);
++		       bool retryOnTimeout = true);
+ 
+     /** Simplified form of doJtagCommand:
+ 	Send 1-byte command 'cmd' to JTAG ICE, with retries, expecting a
+diff --git a/src/jtag2io.cc b/src/jtag2io.cc
+index 40ade22..86ae19e 100644
+--- a/src/jtag2io.cc
++++ b/src/jtag2io.cc
+@@ -366,7 +366,6 @@ bool jtag2::sendJtagCommand(uchar *command, int commandSize, int &tries,
+ void jtag2::doJtagCommand(uchar *command, int  commandSize,
+ 			  uchar *&response, int  &responseSize,
+ 			  bool retryOnTimeout)
+-    throw (jtag_exception)
+ {
+     int sizeseen = 0;
+     uchar code = 0;
+diff --git a/src/jtag3.h b/src/jtag3.h
+index 453ffc5..51914f0 100644
+--- a/src/jtag3.h
++++ b/src/jtag3.h
+@@ -311,7 +311,7 @@ class jtag3: public jtag
+     **/
+     void doJtagCommand(uchar *command, int  commandSize,
+                        const char *name,
+-		       uchar *&response, int &responseSize) throw(jtag_exception);
++		       uchar *&response, int &responseSize);
+ 
+     /** Simplified form of doJtagCommand:
+ 	Send 1-byte command 'cmd' to JTAG ICE, expecting a
+@@ -319,7 +319,7 @@ class jtag3: public jtag
+ 	RSP_OK.
+     **/
+     void doSimpleJtagCommand(uchar cmd, const char *name,
+-                             uchar scope = SCOPE_AVR) throw(jtag_exception);
++                             uchar scope = SCOPE_AVR);
+ 
+     // Miscellaneous
+     // -------------
+diff --git a/src/jtag3io.cc b/src/jtag3io.cc
+index 8b29227..15f5dd3 100644
+--- a/src/jtag3io.cc
++++ b/src/jtag3io.cc
+@@ -306,7 +306,6 @@ bool jtag3::sendJtagCommand(uchar *command, int commandSize,
+ void jtag3::doJtagCommand(uchar *command, int  commandSize,
+                           const char *name,
+                           uchar *&response, int &responseSize)
+-    throw (jtag_exception)
+ {
+     if (sendJtagCommand(command, commandSize, name, response, responseSize))
+         return;
+@@ -318,7 +317,6 @@ void jtag3::doJtagCommand(uchar *command, int  commandSize,
+ }
+ 
+ void jtag3::doSimpleJtagCommand(uchar command, const char *name, uchar scope)
+-    throw (jtag_exception)
+ {
+     int dummy;
+     uchar *replydummy, cmd[3];

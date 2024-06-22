@@ -1,0 +1,66 @@
+From a02e296cedd48f56b4f7779abb0a04fb2c63cf87 Mon Sep 17 00:00:00 2001
+From: Joerg Wunsch <j.gnu@uriah.heep.sax.de>
+Date: Thu, 17 Sep 2020 20:34:33 +0000
+Subject: [PATCH] patch #39 Compilation error in jtag3io.cc: (avarice 2.14)
+
+replace __unused by __attribute__((unused))
+
+
+
+
+git-svn-id: svn://svn.code.sf.net/p/avarice/code/trunk/avarice@390 a7e36acc-7495-4a18-91ca-7b9a7881be12
+---
+ ChangeLog        | 7 +++++++
+ NEWS             | 2 ++
+ src/jtag2usb.cc  | 2 +-
+ src/jtag3io.cc   | 4 ++--
+ src/jtag3prog.cc | 4 +++-
+ 5 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/src/jtag2usb.cc b/src/jtag2usb.cc
+index 8534701..c5a8ac3 100644
+--- a/src/jtag2usb.cc
++++ b/src/jtag2usb.cc
+@@ -739,7 +739,7 @@ static hid_device *openhid(const char *jtagDeviceName, unsigned int &max_pkt_siz
+ 
+ #ifdef HAVE_LIBUSB_2_0
+ /* USB thread */
+-static void *usb_thread(void * data __unused)
++static void *usb_thread(void * data __attribute__((unused)))
+ {
+   struct pollfd fds[2];
+ 
+diff --git a/src/jtag3io.cc b/src/jtag3io.cc
+index 3600fc4..8b29227 100644
+--- a/src/jtag3io.cc
++++ b/src/jtag3io.cc
+@@ -350,12 +350,12 @@ void jtag3::doSimpleJtagCommand(uchar command, const char *name, uchar scope)
+     throw jtag_exception("doSimpleJtagCommand(): too many failures");
+ }
+ 
+-void jtag3::changeBitRate(int newBitRate __unused)
++void jtag3::changeBitRate(int newBitRate __attribute__((unused)))
+ {
+   throw;
+ }
+ 
+-bool jtag3::synchroniseAt(int bitrate __unused)
++bool jtag3::synchroniseAt(int bitrate __attribute__((unused)))
+ {
+   throw;
+ }
+diff --git a/src/jtag3prog.cc b/src/jtag3prog.cc
+index 0fa6346..f725ccc 100644
+--- a/src/jtag3prog.cc
++++ b/src/jtag3prog.cc
+@@ -106,7 +106,9 @@ void jtag3::eraseProgramPage(unsigned long address)
+ }
+ 
+ 
+-void jtag3::downloadToTarget(const char* filename __unused, bool program __unused, bool verify __unused)
++void jtag3::downloadToTarget(const char* filename __attribute__((unused)),
++                             bool program __attribute__((unused)),
++                             bool verify __attribute__((unused)))
+ {
+     statusOut("\nDownload not done.\n");
+     throw jtag_exception("Target programming not implemented for JTAGICE3");
