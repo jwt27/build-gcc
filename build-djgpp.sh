@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+DJCROSS_METHOD=djcross
 DJGPP_DOWNLOAD_BASE="http://www.mirrorservice.org/sites/ftp.delorie.com/pub"
 PACKAGE_SOURCES="djgpp binutils common"
 source script/init.sh
@@ -139,77 +140,76 @@ fi
 cd ${BASE}/build/
 
 if [ ! -z ${GCC_VERSION} ]; then
-  # build gcc
-  untar ${DJCROSS_GCC_ARCHIVE} || exit 1
-  cd djcross-gcc-${GCC_VERSION}/
+  TMPINST="${BASE}/build/tmpinst"
+  export PATH="${TMPINST}/bin:$PATH"
 
-  BUILDDIR=`pwd`
-  export PATH="${BUILDDIR}/tmpinst/bin:$PATH"
-
-  if [ ! -e ${BUILDDIR}/tmpinst/autoconf-${AUTOCONF_VERSION}-built ]; then
+  if [ ! -e ${TMPINST}/autoconf-version ] || [ "$(cat ${TMPINST}/autoconf-version)" != "${AUTOCONF_VERSION}" ]; then
     echo "Building autoconf"
-    cd $BUILDDIR
+    cd ${BASE}/build/ || exit 1
     untar ${AUTOCONF_ARCHIVE} || exit 1
     cd autoconf-${AUTOCONF_VERSION}/
-      ./configure --prefix=$BUILDDIR/tmpinst || exit 1
+      ./configure --prefix=${TMPINST} || exit 1
       ${MAKE_J} DESTDIR= all install || exit 1
-    rm ${BUILDDIR}/tmpinst/autoconf-*-built
-    touch ${BUILDDIR}/tmpinst/autoconf-${AUTOCONF_VERSION}-built
+    echo ${AUTOCONF_VERSION} > ${TMPINST}/autoconf-version
   else
     echo "autoconf already built, skipping."
   fi
 
-  if [ ! -e ${BUILDDIR}/tmpinst/automake-${AUTOMAKE_VERSION}-built ]; then
+  if [ ! -e ${TMPINST}/automake-version ] || [ "$(cat ${TMPINST}/automake-version)" != "${AUTOMAKE_VERSION}" ]; then
     echo "Building automake"
-    cd $BUILDDIR
+    cd ${BASE}/build/ || exit 1
     untar ${AUTOMAKE_ARCHIVE} || exit 1
     cd automake-${AUTOMAKE_VERSION}/
-    ./configure --prefix=$BUILDDIR/tmpinst || exit 1
+    ./configure --prefix=${TMPINST} || exit 1
       ${MAKE} DESTDIR= all install || exit 1
-    rm ${BUILDDIR}/tmpinst/automake-*-built
-    touch ${BUILDDIR}/tmpinst/automake-${AUTOMAKE_VERSION}-built
+    echo ${AUTOMAKE_VERSION} > ${TMPINST}/automake-version
   else
     echo "automake already built, skipping."
   fi
 
-  cd $BUILDDIR
+  cd ${BASE}/build/
 
-  if [ ! -e gcc-unpacked ]; then
-    rm -rf $BUILDDIR/gnu/
+  # build gcc
+  BUILDDIR="${BASE}/build/djcross-gcc-${GCC_VERSION}"
+  mkdir -p ${BUILDDIR}
 
-    if [ `uname` = "FreeBSD" ]; then
-      # The --verbose option is not recognized by BSD patch
-      sed -i 's/patch --verbose/patch/' unpack-gcc.sh || exit 1
-    fi
-
-    case ${GCC_VERSION} in
-    4.7.3) UNPACK_PATCH=patch-unpack-gcc-4.7.3.txt ;;
-    4.8.0) ;&
-    4.8.1) ;&
-    4.8.2) UNPACK_PATCH=patch-unpack-gcc-4.8.0.txt ;;
-    *)     UNPACK_PATCH=patch-unpack-gcc.txt ;;
-    esac
-
-    patch -p1 -u < ${BASE}/patch/${UNPACK_PATCH} || exit 1
+  if [ ! -e ${BUILDDIR}/gcc-unpacked ]; then
+    rm -rf ${BUILDDIR}/gnu/
 
     echo "Unpacking gcc..."
-    mkdir gnu/
-    cd gnu/ || exit 1
+    mkdir -p ${BUILDDIR}/gnu/
+    cd ${BUILDDIR}/gnu/ || exit 1
     untar ${GCC_ARCHIVE}
     cd ..
 
-    echo "Running unpack-gcc.sh"
-    sh unpack-gcc.sh --no-djgpp-source || exit 1
+    if [ "${DJCROSS_METHOD}" = 'djcross' ]; then
+      ( cd ${BASE}/build/ && untar ${DJCROSS_GCC_ARCHIVE} ) || exit 1
+
+      if [ `uname` = "FreeBSD" ]; then
+        # The --verbose option is not recognized by BSD patch
+        sed -i 's/patch --verbose/patch/' unpack-gcc.sh || exit 1
+      fi
+
+      case ${GCC_VERSION} in
+      4.7.3) UNPACK_PATCH=patch-unpack-gcc-4.7.3.txt ;;
+      4.8.0) ;&
+      4.8.1) ;&
+      4.8.2) UNPACK_PATCH=patch-unpack-gcc-4.8.0.txt ;;
+      *)     UNPACK_PATCH=patch-unpack-gcc.txt ;;
+      esac
+
+      patch -p1 -u < ${BASE}/patch/${UNPACK_PATCH} || exit 1
+
+      echo "Running unpack-gcc.sh"
+      sh unpack-gcc.sh --no-djgpp-source || exit 1
+    fi
 
     # patch gnu/gcc-X.XX/gcc/doc/gcc.texi
     echo "Patch gcc/doc/gcc.texi"
     cd gnu/gcc-*/gcc/doc || exit 1
     sed -i "s/[^^]@\(\(tex\)\|\(end\)\)/\n@\1/g" gcc.texi || exit 1
-    cd -
 
-    cd $BUILDDIR/
-
-    pushd gnu/gcc-${GCC_VERSION} || exit 1
+    cd ${BUILDDIR}/gnu/gcc-${GCC_VERSION} || exit 1
 
     if [ ! -z ${BUILD_DEB} ]; then
       echo "Unpacking gcc dependencies"
@@ -226,17 +226,16 @@ if [ ! -z ${GCC_VERSION} ]; then
 
     # apply extra patches if necessary
     cat ${BASE}/patch/djgpp-gcc-${GCC_VERSION}/* | patch -p1 -u || exit 1
-    popd
 
-    touch gcc-unpacked
+    touch ${BUILDDIR}/gcc-unpacked
   else
     echo "gcc already unpacked, skipping."
   fi
 
   echo "Building gcc (stage 1)"
 
-  mkdir -p djcross
-  cd djcross || exit 1
+  mkdir -p ${BUILDDIR}/djcross
+  cd ${BUILDDIR}/djcross || exit 1
 
   TEMP_CFLAGS="$CFLAGS"
   TEMP_CXXFLAGS="$CXXFLAGS"
@@ -256,7 +255,7 @@ if [ ! -z ${GCC_VERSION} ]; then
     sleep 5
   fi
 
-  cp ${DST}/bin/${TARGET}-stubify ${BUILDDIR}/tmpinst/bin/stubify || exit 1
+  cp ${DST}/bin/${TARGET}-stubify ${TMPINST}/bin/stubify || exit 1
 
   ${MAKE_J} all-gcc || exit 1
   echo "Installing gcc (stage 1)"
@@ -326,7 +325,7 @@ if [ ! -z ${GCC_VERSION} ]; then
   echo "Installing gcc (stage 2)"
   ${SUDO} ${MAKE_J} install-strip || \
   ${SUDO} ${MAKE_J} install-strip || exit 1
-  ${SUDO} ${MAKE_J} -C mpfr install DESTDIR=${BASE}/build/tmpinst
+  ${SUDO} ${MAKE_J} -C mpfr install DESTDIR=${TMPINST}
 
   CFLAGS="$TEMP_CFLAGS"
   CXXFLAGS="$TEMP_CXXFLAGS"

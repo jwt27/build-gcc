@@ -11,7 +11,7 @@ if [ -z ${IGNORE_DEPENDENCIES} ]; then
   done
 fi
 
-if [ ! -z ${GCC_VERSION} ] && [ -z ${DJCROSS_GCC_ARCHIVE} ]; then
+if [ ! -z ${GCC_VERSION} ] && [ -z ${DJCROSS_GCC_ARCHIVE} ] && [ "${DJCROSS_METHOD}" == 'djcross' ]; then
   DJCROSS_GCC_ARCHIVE="${DJGPP_DOWNLOAD_BASE}/djgpp/rpms/djcross-gcc-${GCC_VERSION}/djcross-gcc-${GCC_VERSION}.tar.bz2"
   # djcross-gcc-X.XX-tar.* maybe moved from /djgpp/rpms/ to /djgpp/deleted/rpms/ directory.
   OLD_DJCROSS_GCC_ARCHIVE=${DJCROSS_GCC_ARCHIVE/rpms\//deleted\/rpms\/}
@@ -25,7 +25,7 @@ esac
 if [ ! -z ${BUILD_DEB} ] && [ ! -z ${GCC_VERSION} ]; then
   GMP_VERSION=${GMP_VERSION:-6.2.1}
   MPFR_VERSION=${MPFR_VERSION:-4.1.0}
-  MPC_VERSION=${MPC_VERSION:-1.2.0}
+  MPC_VERSION=${MPC_VERSION:-1.2.1}
   ISL_VERSION=${ISL_VERSION:-0.24}
 
   GMP_ARCHIVE="http://ftpmirror.gnu.org/gnu/gmp/gmp-${GMP_VERSION}.tar.xz"
