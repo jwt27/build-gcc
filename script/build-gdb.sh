@@ -4,13 +4,17 @@ if [ ! -z ${GDB_VERSION} ]; then
   if [ ! -e gdb-${GDB_VERSION}/gdb-unpacked ]; then
     echo "Unpacking gdb..."
     untar ${GDB_ARCHIVE} || exit 1
-    touch gdb-${GDB_VERSION}/gdb-unpacked
+
+    cd gdb-${GDB_VERSION}/ || exit 1
+    cat ${BASE}/patch/gdb-${GDB_VERSION}/* | patch -p1 -u || exit 1
+    touch gdb-unpacked
+    cd ..
   fi
   mkdir -p gdb-${GDB_VERSION}/build-${TARGET}
   cd gdb-${GDB_VERSION}/build-${TARGET} || exit 1
 
   echo "Building gdb"
-  
+
   GDB_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}"
   [ -e ${BASE}/build/tmpinst${PREFIX}/lib/libmpfr.a ] && GDB_CONFIGURE_OPTIONS+=" --with-mpfr=${BASE}/build/tmpinst${PREFIX}"
   strip_whitespace GDB_CONFIGURE_OPTIONS

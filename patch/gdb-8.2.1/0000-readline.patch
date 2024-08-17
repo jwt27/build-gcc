@@ -1,0 +1,91 @@
+commit 16bfc2f9705b40a11052f465b83fea2ec0904ce5
+Author: Alan Hayward <alan.hayward@arm.com>
+Date:   Thu Jan 31 09:48:39 2019 +0000
+
+    Readline: Cleanup some warnings
+    
+    Cleanup the readline warnings that gdb buildbot complains about.
+    
+    To prevent wcwidth missing declaration warnings, add the SOURCE /
+    EXTENSION macros to config.in that have already checked for in
+    configure.
+    
+    Ensure pid is a long before printing as one.  Also fix GNU style.
+    
+    Check the return value of write the same way as history_do_write ().
+    
+    These changes are consistent with upstream readline.
+    
+    readline/ChangeLog.gdb:
+    
+            * config.h.in: Add SOURCE/EXTENSION macros.
+            * histfile.c (history_truncate_file): Check return of write.
+            * util.c (_rl_tropen): Ensure pid is long.
+
+diff --git a/readline/ChangeLog.gdb b/readline/ChangeLog.gdb
+index f05b9dc52c2..c59329ee7d2 100644
+--- a/readline/ChangeLog.gdb
++++ b/readline/ChangeLog.gdb
+@@ -1,3 +1,9 @@
++2019-01-31  Alan Hayward  <alan.hayward@arm.com>
++
++	* config.h.in: Add SOURCE/EXTENSION macros.
++	* histfile.c (history_truncate_file): Check return of write.
++	* util.c (_rl_tropen): Ensure pid is long.
++
+ 2017-05-19  Eli Zaretskii  <eliz@gnu.org>
+ 
+ 	* input.c [_WIN32]: Include <conio.h> to avoid compiler warning on
+diff --git a/readline/config.h.in b/readline/config.h.in
+index 86d86cfa3da..c194e761a45 100644
+--- a/readline/config.h.in
++++ b/readline/config.h.in
+@@ -1,5 +1,15 @@
+ /* config.h.in.  Maintained by hand. */
+ 
++/* Template definitions for autoconf */
++#undef __EXTENSIONS__
++#undef _ALL_SOURCE
++#undef _GNU_SOURCE
++#undef _POSIX_SOURCE
++#undef _POSIX_1_SOURCE
++#undef _POSIX_PTHREAD_SEMANTICS
++#undef _TANDEM_SOURCE
++#undef _MINIX
++
+ /* Define NO_MULTIBYTE_SUPPORT to not compile in support for multibyte
+    characters, even if the OS supports them. */
+ #undef NO_MULTIBYTE_SUPPORT
+diff --git a/readline/histfile.c b/readline/histfile.c
+index fffeb3fd319..56cbbf0498c 100644
+--- a/readline/histfile.c
++++ b/readline/histfile.c
+@@ -407,7 +407,8 @@ history_truncate_file (fname, lines)
+      truncate to. */
+   if (bp > buffer && ((file = open (filename, O_WRONLY|O_TRUNC|O_BINARY, 0600)) != -1))
+     {
+-      write (file, bp, chars_read - (bp - buffer));
++      if (write (file, bp, chars_read - (bp - buffer)) < 0)
++	rv = errno;
+ 
+ #if defined (__BEOS__)
+       /* BeOS ignores O_TRUNC. */
+diff --git a/readline/util.c b/readline/util.c
+index d402fce842c..13bd00c09c9 100644
+--- a/readline/util.c
++++ b/readline/util.c
+@@ -515,11 +515,11 @@ _rl_tropen ()
+ 	   (sh_get_env_value ("TEMP")
+ 	    ? sh_get_env_value ("TEMP")
+ 	    : "."),
+-	   getpid());
++	   getpid ());
+ #else
+-  sprintf (fnbuf, "/var/tmp/rltrace.%ld", getpid());
++  sprintf (fnbuf, "/var/tmp/rltrace.%ld", (long) getpid ());
+ #endif
+-  unlink(fnbuf);
++  unlink (fnbuf);
+   _rl_tracefp = fopen (fnbuf, "w+");
+   return _rl_tracefp != 0;
+ }
