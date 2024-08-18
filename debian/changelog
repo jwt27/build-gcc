@@ -1,10 +1,10 @@
-djgpp-toolchain (12) unstable; urgency=medium
+djgpp-toolchain (12.1) unstable; urgency=medium
 
   * Set 'Architecture: all' for library packages.
   * binutils version 2.43.
   * gcc version 14.1.0.
 
- -- jwt27 <jwjagersma@gmail.com>  Sat, 17 Aug 2024 16:08:07 +0200
+ -- jwt27 <jwjagersma@gmail.com>  Sun, 18 Aug 2024 17:10:30 +0200
 
 djgpp-toolchain (11) unstable; urgency=medium
 

@@ -243,7 +243,13 @@ if [ ! -z ${GCC_VERSION} ]; then
   export CXXFLAGS="$CXXFLAGS $GCC_EXTRA_CXXFLAGS"
 
   GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
-                           --enable-languages=${ENABLE_LANGUAGES}"
+                           --enable-languages=${ENABLE_LANGUAGES}
+                           --with-native-system-header-dir=${PREFIX}/${TARGET}/sys-include"
+
+  if [ ! -z "${DESTDIR}" ]; then
+    GCC_CONFIGURE_OPTIONS+=" --with-build-sysroot=${DESTDIR}"
+  fi
+
   strip_whitespace GCC_CONFIGURE_OPTIONS
 
   if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" == "${GCC_CONFIGURE_OPTIONS}" ]; then
