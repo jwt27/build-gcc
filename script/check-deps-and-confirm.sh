@@ -38,7 +38,7 @@ fi
 # It is for OSX, which doesn't ship with GNU sed.
 if ! sed --version 2>/dev/null | grep "GNU sed" > /dev/null ;then
   echo GNU sed is not installed, need to download.
-  SED_VERSION=4.4
+  SED_VERSION=4.9
   SED_ARCHIVE="http://ftpmirror.gnu.org/sed/sed-${SED_VERSION}.tar.xz"
 else
   SED_ARCHIVE=""
