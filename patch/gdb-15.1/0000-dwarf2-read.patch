@@ -1,0 +1,42 @@
+commit 5d683ae3dadd78fa88c243310404480555555246
+Author: Tom Tromey <tromey@adacore.com>
+Date:   Wed Aug 21 09:09:26 2024 -0600
+
+    Do not assume ELF in dwarf2/read.c
+    
+    dwarf2/read.c has this code:
+    
+      else if (elf_section_data (sectp)->this_hdr.sh_size
+               > bfd_get_file_size (abfd))
+    
+    This assumes that the BFD is an ELF, which is an invalid assumption.
+    A user noticed that this can sometimes cause a crash.
+    
+    This patch fixes the problem by changing this code to use
+    bfd_section_size_insane.
+    
+    Bug: https://sourceware.org/bugzilla/show_bug.cgi?id=32104
+    Reviewed-By: Tom de Vries <tdevries@suse.de>
+    Reviewed-by: Keith Seitz <keiths@redhat.com>
+
+diff --git a/gdb/dwarf2/read.c b/gdb/dwarf2/read.c
+index 4818da58acb..6309bccc0a3 100644
+--- a/gdb/dwarf2/read.c
++++ b/gdb/dwarf2/read.c
+@@ -1425,12 +1425,11 @@ dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
+   if ((aflag & SEC_HAS_CONTENTS) == 0)
+     {
+     }
+-  else if (elf_section_data (sectp)->this_hdr.sh_size
+-	   > bfd_get_file_size (abfd))
++  else if (bfd_section_size_insane (abfd, sectp))
+     {
+-      bfd_size_type size = elf_section_data (sectp)->this_hdr.sh_size;
+-      warning (_("Discarding section %s which has a section size (%s"
+-		 ") larger than the file size [in module %s]"),
++      bfd_size_type size = sectp->size;
++      warning (_("Discarding section %s which has an invalid size (%s) "
++		 "[in module %s]"),
+ 	       bfd_section_name (sectp), phex_nz (size, sizeof (size)),
+ 	       bfd_get_filename (abfd));
+     }
