@@ -22,15 +22,26 @@ case $TARGET in
 *) unset DJCROSS_GCC_ARCHIVE OLD_DJCROSS_GCC_ARCHIVE ;;
 esac
 
-if [ ! -z ${BUILD_DEB} ] && [ ! -z ${GCC_VERSION} ]; then
-  GMP_VERSION=${GMP_VERSION:-6.2.1}
-  MPFR_VERSION=${MPFR_VERSION:-4.1.0}
-  MPC_VERSION=${MPC_VERSION:-1.2.1}
-  ISL_VERSION=${ISL_VERSION:-0.24}
+if [ ! -z "$GCC_VERSION" ] || [ ! -z "$GDB_VERSION" ]; then
+  GMP_VERSION="${GMP_VERSION:-6.3.0}"
+  MPFR_VERSION="${MPFR_VERSION:-4.2.1}"
+fi
 
+if [ ! -z "$GCC_VERSION" ]; then
+  MPC_VERSION="${MPC_VERSION:-1.3.1}"
+  ISL_VERSION="${ISL_VERSION:-0.24}"
+fi
+
+if [ ! -z "$GMP_VERSION" ]; then
   GMP_ARCHIVE="http://ftpmirror.gnu.org/gnu/gmp/gmp-${GMP_VERSION}.tar.xz"
+fi
+if [ ! -z "$MPFR_VERSION" ]; then
   MPFR_ARCHIVE="http://ftpmirror.gnu.org/gnu/mpfr/mpfr-${MPFR_VERSION}.tar.xz"
+fi
+if [ ! -z "$MPC_VERSION" ]; then
   MPC_ARCHIVE="http://ftpmirror.gnu.org/gnu/mpc/mpc-${MPC_VERSION}.tar.gz"
+fi
+if [ ! -z "$ISL_VERSION" ]; then
   ISL_ARCHIVE="http://gcc.gnu.org/pub/gcc/infrastructure/isl-${ISL_VERSION}.tar.bz2"
 fi
 

@@ -140,16 +140,13 @@ fi
 cd ${BASE}/build/
 
 if [ ! -z ${GCC_VERSION} ]; then
-  TMPINST="${BASE}/build/tmpinst"
-  export PATH="${TMPINST}/bin:$PATH"
-
   if [ ! -e ${TMPINST}/autoconf-version ] || [ "$(cat ${TMPINST}/autoconf-version)" != "${AUTOCONF_VERSION}" ]; then
     echo "Building autoconf"
     cd ${BASE}/build/ || exit 1
     untar ${AUTOCONF_ARCHIVE} || exit 1
     cd autoconf-${AUTOCONF_VERSION}/
-      ./configure --prefix=${TMPINST} || exit 1
-      ${MAKE_J} DESTDIR= all install || exit 1
+    ./configure --prefix=${TMPINST} || exit 1
+    ${MAKE_J} DESTDIR= all install || exit 1
     echo ${AUTOCONF_VERSION} > ${TMPINST}/autoconf-version
   else
     echo "autoconf already built, skipping."
@@ -161,7 +158,7 @@ if [ ! -z ${GCC_VERSION} ]; then
     untar ${AUTOMAKE_ARCHIVE} || exit 1
     cd automake-${AUTOMAKE_VERSION}/
     ./configure --prefix=${TMPINST} || exit 1
-      ${MAKE} DESTDIR= all install || exit 1
+    ${MAKE} DESTDIR= all install || exit 1
     echo ${AUTOMAKE_VERSION} > ${TMPINST}/automake-version
   else
     echo "automake already built, skipping."
@@ -211,19 +208,6 @@ if [ ! -z ${GCC_VERSION} ]; then
 
     cd ${BUILDDIR}/gnu/gcc-${GCC_VERSION} || exit 1
 
-    if [ ! -z ${BUILD_DEB} ]; then
-      echo "Unpacking gcc dependencies"
-      for URL in $GMP_ARCHIVE $MPFR_ARCHIVE $MPC_ARCHIVE $ISL_ARCHIVE; do
-        FILE=`basename $URL`
-        untar ${FILE}
-        mv ${FILE%.*.*} ${FILE%%-*} || exit 1
-      done
-    else
-      echo "Downloading gcc dependencies"
-      sed -i 's/ftp/http/g' contrib/download_prerequisites
-      ./contrib/download_prerequisites || exit 1
-    fi
-
     # apply extra patches if necessary
     cat ${BASE}/patch/djgpp-gcc-${GCC_VERSION}/* | patch -p1 -u || exit 1
 
@@ -242,8 +226,9 @@ if [ ! -z ${GCC_VERSION} ]; then
   export CFLAGS="$CFLAGS $GCC_EXTRA_CFLAGS"
   export CXXFLAGS="$CXXFLAGS $GCC_EXTRA_CXXFLAGS"
 
-  GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
+  GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX}
                            --enable-languages=${ENABLE_LANGUAGES}
+                           ${HOST_FLAG} ${BUILD_FLAG} ${WITH_LIBS}
                            --with-native-system-header-dir=${PREFIX}/${TARGET}/sys-include"
 
   if [ ! -z "${DESTDIR}" ]; then
@@ -331,7 +316,6 @@ if [ ! -z ${GCC_VERSION} ]; then
   echo "Installing gcc (stage 2)"
   ${SUDO} ${MAKE_J} install-strip || \
   ${SUDO} ${MAKE_J} install-strip || exit 1
-  ${SUDO} ${MAKE_J} -C mpfr install DESTDIR=${TMPINST}
 
   CFLAGS="$TEMP_CFLAGS"
   CXXFLAGS="$TEMP_CXXFLAGS"

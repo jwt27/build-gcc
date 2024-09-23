@@ -15,8 +15,7 @@ if [ ! -z ${GDB_VERSION} ]; then
 
   echo "Building gdb"
 
-  GDB_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}"
-  [ -e ${BASE}/build/tmpinst${PREFIX}/lib/libmpfr.a ] && GDB_CONFIGURE_OPTIONS+=" --with-mpfr=${BASE}/build/tmpinst${PREFIX}"
+  GDB_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG} ${WITH_LIBS}"
   strip_whitespace GDB_CONFIGURE_OPTIONS
 
   if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" = "${GDB_CONFIGURE_OPTIONS}" ]; then

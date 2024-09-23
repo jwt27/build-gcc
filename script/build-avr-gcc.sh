@@ -23,23 +23,9 @@ if [ ! -z ${GCC_VERSION} ]; then
     echo "Unpacking gcc..."
     untar ${GCC_ARCHIVE}
 
-    pushd gcc-${GCC_VERSION} || exit 1
-
-    if [ ! -z ${BUILD_DEB} ]; then
-      echo "Unpacking gcc dependencies"
-      for URL in $GMP_ARCHIVE $MPFR_ARCHIVE $MPC_ARCHIVE $ISL_ARCHIVE; do
-        FILE=`basename $URL`
-        untar ${FILE}
-        mv ${FILE%.*.*} ${FILE%%-*} || exit 1
-      done
-    else
-      echo "Downloading gcc dependencies"
-      sed -i 's/ftp/http/g' contrib/download_prerequisites
-      ./contrib/download_prerequisites || exit 1
-    fi
-
+    cd gcc-${GCC_VERSION} || exit 1
     touch gcc-unpacked
-    popd
+    cd ..
   fi
 
   echo "Building gcc (stage 1)"
@@ -54,7 +40,7 @@ if [ ! -z ${GCC_VERSION} ]; then
 
   GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
                            --enable-languages=${ENABLE_LANGUAGES}
-                           --with-avrlibc"
+                           --with-avrlibc ${WITH_LIBS}"
   strip_whitespace GCC_CONFIGURE_OPTIONS
 
   if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" == "${GCC_CONFIGURE_OPTIONS}" ]; then
@@ -117,7 +103,6 @@ if [ ! -z ${GCC_VERSION} ]; then
   echo "Installing gcc"
   ${SUDO} ${MAKE_J} install-strip || \
   ${SUDO} ${MAKE_J} install-strip || exit 1
-  ${SUDO} ${MAKE_J} -C mpfr install DESTDIR=${BASE}/build/tmpinst
 
   CFLAGS="$TEMP_CFLAGS"
   CXXFLAGS="$TEMP_CXXFLAGS"
