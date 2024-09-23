@@ -11,7 +11,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 
 ### Current package versions, as of 2024-09-23:
 
-* gcc 14.1.0
+* gcc 14.2.0
 * binutils 2.43.1
 * gdb 15.1
 * djgpp 2.05 / cvs
