@@ -40,7 +40,7 @@ jobs:
             PACKAGES: binutils gcc newlib
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Clear brew package cache
         if: contains(matrix.os, 'macos')
@@ -48,7 +48,7 @@ jobs:
           rm -rf $(brew --cache)
 
       - name: Cache brew package cache
-        uses: jwt27/cache@dist
+        uses: actions/cache@v4
         if: contains(matrix.os, 'macos')
         with:
           path: ~/Library/Caches/Homebrew
@@ -78,7 +78,7 @@ jobs:
           echo "$(brew --prefix)/opt/ccache/libexec" >> $GITHUB_PATH
 
       - name: Cache sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: download
           key: testbuild-sources-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}-${{ github.sha }}
@@ -86,7 +86,7 @@ jobs:
             testbuild-sources-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}-
 
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.ccache
           key: testbuild-ccache-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}-${{ github.sha }}
@@ -100,7 +100,7 @@ jobs:
         run: ./script/select-script.sh --only-download
 
       - name: Cache build output
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         if: matrix.build-type == 'rebuild'
         id: cache-build
         with:
