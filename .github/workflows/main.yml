@@ -71,8 +71,8 @@ jobs:
       - name: Install dependencies (macos)
         if: contains(matrix.os, 'macos')
         run: |
-          brew update
-          brew install bash bison flex curl make texinfo zlib bzip2 gzip xz unzip dos2unix libtool cmake help2man nasm s-lang ccache
+          brew update -q
+          brew install -q --formula bash bison flex curl make texinfo zlib bzip2 gzip xz unzip dos2unix libtool cmake help2man nasm s-lang ccache
           mkdir -p $HOME/.ccache
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           echo "$(brew --prefix)/opt/ccache/libexec" >> $GITHUB_PATH
