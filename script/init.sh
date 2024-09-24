@@ -6,6 +6,9 @@ unset INSTALL
 umask 022
 
 BASE=`pwd`
+TMPINST="${BASE}/build/tmpinst"
+mkdir -p "$TMPINST"
+export PATH="${TMPINST}/bin:$PATH"
 
 # number of parallel build threads
 if nproc > /dev/null 2>&1 ; then

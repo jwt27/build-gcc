@@ -1,7 +1,3 @@
-TMPINST="${BASE}/build/tmpinst"
-mkdir -p "$TMPINST"
-export PATH="${TMPINST}/bin:$PATH"
-
 cd "${BASE}/build/" || exit 1
 
 # build GNU sed if needed.

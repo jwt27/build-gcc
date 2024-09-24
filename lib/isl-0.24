@@ -1,0 +1,2 @@
+ISL_VERSION=0.24
+ISL_ARCHIVE="http://gcc.gnu.org/pub/gcc/infrastructure/isl-${ISL_VERSION}.tar.bz2"

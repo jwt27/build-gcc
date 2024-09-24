@@ -1,15 +1,25 @@
-if [ -z ${IGNORE_DEPENDENCIES} ]; then
-  for DEP in ${DEPS}; do
-    case $DEP in
-      djgpp)    [ -z "$(get_version djgpp)" ]    && add_pkg djgpp ;;
-      newlib)   [ -z "$(get_version newlib)" ]   && add_pkg newlib ;;
-      avr-libc) [ -z "$(get_version avr-libc)" ] && add_pkg avr-libc ;;
-      binutils) [ -z "$(get_version binutils)" ] && add_pkg binutils ;;
-      gcc)      [ -z "$(get_version gcc)" ]      && add_pkg gcc ;;
-      gdb)      [ -z "$(get_version gdb)" ]      && add_pkg gdb ;;
-    esac
+if [ -z "$IGNORE_DEPENDENCIES" ]; then
+  for DEP in $DEPS; do
+    [ -z "$(get_version "$DEP")" ] && add_pkg "$DEP"
   done
 fi
+
+LIBDEPS=''
+
+if [ ! -z "$GCC_VERSION" ] || [ ! -z "$GDB_VERSION" ]; then
+  LIBDEPS+=' gmp mpfr'
+fi
+
+if [ ! -z "$GCC_VERSION" ]; then
+  LIBDEPS+=' mpc isl'
+fi
+
+for DEP in $LIBDEPS; do
+  VERSION_VAR="${DEP^^}_VERSION"
+  if [ -z "${!VERSION_VAR}" ]; then
+    source "lib/$DEP" || exit 1
+  fi
+done
 
 if [ ! -z ${GCC_VERSION} ] && [ -z ${DJCROSS_GCC_ARCHIVE} ] && [ "${DJCROSS_METHOD}" == 'djcross' ]; then
   DJCROSS_GCC_ARCHIVE="${DJGPP_DOWNLOAD_BASE}/djgpp/rpms/djcross-gcc-${GCC_VERSION}/djcross-gcc-${GCC_VERSION}.tar.bz2"
@@ -21,29 +31,6 @@ case $TARGET in
 *-msdosdjgpp) ;;
 *) unset DJCROSS_GCC_ARCHIVE OLD_DJCROSS_GCC_ARCHIVE ;;
 esac
-
-if [ ! -z "$GCC_VERSION" ] || [ ! -z "$GDB_VERSION" ]; then
-  GMP_VERSION="${GMP_VERSION:-6.3.0}"
-  MPFR_VERSION="${MPFR_VERSION:-4.2.1}"
-fi
-
-if [ ! -z "$GCC_VERSION" ]; then
-  MPC_VERSION="${MPC_VERSION:-1.3.1}"
-  ISL_VERSION="${ISL_VERSION:-0.24}"
-fi
-
-if [ ! -z "$GMP_VERSION" ]; then
-  GMP_ARCHIVE="http://ftpmirror.gnu.org/gnu/gmp/gmp-${GMP_VERSION}.tar.xz"
-fi
-if [ ! -z "$MPFR_VERSION" ]; then
-  MPFR_ARCHIVE="http://ftpmirror.gnu.org/gnu/mpfr/mpfr-${MPFR_VERSION}.tar.xz"
-fi
-if [ ! -z "$MPC_VERSION" ]; then
-  MPC_ARCHIVE="http://ftpmirror.gnu.org/gnu/mpc/mpc-${MPC_VERSION}.tar.gz"
-fi
-if [ ! -z "$ISL_VERSION" ]; then
-  ISL_ARCHIVE="http://gcc.gnu.org/pub/gcc/infrastructure/isl-${ISL_VERSION}.tar.bz2"
-fi
 
 # check GNU sed is installed or not.
 # It is for OSX, which doesn't ship with GNU sed.
