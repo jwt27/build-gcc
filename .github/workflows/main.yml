@@ -64,8 +64,8 @@ jobs:
           sudo apt-get install bison flex curl make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip dos2unix libtool-bin gcc-11 g++-11 cmake help2man python2-dev nasm libslang2-dev ccache
           echo "CC=gcc-12" >> $GITHUB_ENV
           echo "CXX=g++-12" >> $GITHUB_ENV
-          mkdir -p ~/.ccache
-          echo "CCACHE_DIR=~/.ccache" >> $GITHUB_ENV
+          mkdir -p $HOME/.ccache
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Install dependencies (macos)
@@ -73,8 +73,8 @@ jobs:
         run: |
           brew update
           brew install bash bison flex curl make texinfo zlib bzip2 gzip xz unzip dos2unix libtool cmake help2man nasm s-lang ccache
-          mkdir -p ~/.ccache
-          echo "CCACHE_DIR=~/.ccache" >> $GITHUB_ENV
+          mkdir -p $HOME/.ccache
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           echo "$(brew --prefix)/opt/ccache/libexec" >> $GITHUB_PATH
 
       - name: Cache sources
@@ -88,7 +88,7 @@ jobs:
       - name: Cache ccache
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
+          path: ${{ env.CCACHE_DIR }}
           key: testbuild-ccache-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}-${{ github.sha }}
           restore-keys: |
             testbuild-ccache-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}-
