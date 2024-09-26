@@ -333,7 +333,8 @@ if [ ! -z ${DJGPP_VERSION} ]; then
   ${MAKE_J} -C utils native || exit 1
   ${MAKE_J} -C dxe native || exit 1
   ${MAKE_J} -C debug || exit 1
-  ${MAKE_J} -C libemu || exit 1
+  # Disabled for now.  See issue #46.
+  #${MAKE_J} -C libemu || exit 1
   ${MAKE_J} -C libm || exit 1
   ${MAKE_J} -C docs || exit 1
   ${MAKE_J} -C ../zoneinfo/src

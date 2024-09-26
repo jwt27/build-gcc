@@ -1,3 +1,9 @@
+djgpp-toolchain (14) UNRELEASED; urgency=medium
+
+  * Drop libemu, as it causes spurious build failures.  See issue #46.
+
+ -- jwt27 <jwjagersma@gmail.com>  Thu, 26 Sep 2024 20:47:06 +0200
+
 djgpp-toolchain (13.1) unstable; urgency=medium
 
   * binutils version 2.43.1.

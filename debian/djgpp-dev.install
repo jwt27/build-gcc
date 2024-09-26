@@ -1,6 +1,5 @@
 usr/i*86-pc-msdosdjgpp/lib/libg.a
 usr/i*86-pc-msdosdjgpp/lib/libm.a
-usr/i*86-pc-msdosdjgpp/lib/libemu.a
 usr/i*86-pc-msdosdjgpp/lib/libpc.a
 usr/i*86-pc-msdosdjgpp/lib/crt0.o
 usr/i*86-pc-msdosdjgpp/lib/djgpp.djl
