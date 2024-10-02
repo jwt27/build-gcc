@@ -1,8 +1,9 @@
 djgpp-toolchain (14) UNRELEASED; urgency=medium
 
   * Drop libemu, as it causes spurious build failures.  See issue #46.
+  * gdb version 15.2.
 
- -- jwt27 <jwjagersma@gmail.com>  Thu, 26 Sep 2024 20:47:06 +0200
+ -- jwt27 <jwjagersma@gmail.com>  Wed, 02 Oct 2024 19:03:56 +0200
 
 djgpp-toolchain (13.1) unstable; urgency=medium
 
