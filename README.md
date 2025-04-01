@@ -62,7 +62,7 @@ On Debian/Ubuntu, you can install these programs by :
 
 ```console
 $ sudo apt-get update
-$ sudo apt-get install bison flex curl gcc g++ make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip python{2,3}-dev m4 dos2unix nasm
+$ sudo apt-get install bison flex curl gcc g++ make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip python3-dev m4 dos2unix nasm
 ```
 
 Fedora :
@@ -74,7 +74,7 @@ $ sudo yum install gcc-c++ which bison flex texinfo patch zlib-devel tar bzip2 g
 mingw-w64 (msys2) :
 
 ```console
-$ pacman -Syuu base-devel mingw-w64-x86_64-{toolchain,curl,zlib,python{2,3}} compression m4 dos2unix nasm
+$ pacman -Syuu base-devel mingw-w64-x86_64-{toolchain,curl,zlib,python3} compression m4 dos2unix nasm
 ```
 
 ### Configuration
