@@ -1,0 +1,24 @@
+commit 5c98dfb416dd87322c80d99dcbf1e2ffadfe9cbf
+Author: J.W. Jagersma <jwjagersma@gmail.com>
+Date:   Tue Apr 1 18:45:09 2025 +0200
+
+    Compile separate ident file for emu387.dxe
+    
+    Fixes a race condition with parallel make.
+    See: https://github.com/jwt27/build-gcc/issues/46
+
+diff --git a/src/libemu/makefile b/src/libemu/makefile
+index ceaa16cc..97896a7c 100644
+--- a/src/libemu/makefile
++++ b/src/libemu/makefile
+@@ -12,7 +12,8 @@ include $(TOP)/../makefile.lib
+ all ::	$(BIN)/emu387.dxe
+ 
+ $(BIN)/emu387.dxe : src/emu387.o src/emudummy.o
+-	$(HOSTBIN)/dxegen.exe $(BIN)/emu387.dxe __emu_entry src/emu387.o id_emu.o src/emudummy.o -L../../lib $(LIBGCCA) -lc $(LIBGCCA)
+-	
++	$(CROSS_GCC) -c -DLIB=libemu $(TOP)/../ident.c -o id_dxemu.o
++	$(HOSTBIN)/dxegen.exe $(BIN)/emu387.dxe __emu_entry src/emu387.o id_dxemu.o src/emudummy.o -L../../lib $(LIBGCCA) -lc $(LIBGCCA)
++
+ clean ::
+ 	$(MISC) rm makefile.sub
