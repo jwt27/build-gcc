@@ -13,7 +13,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 
 * gcc 14.2.0
 * binutils 2.43.1
-* gdb 16.1
+* gdb 16.2
 * djgpp 2.05 / cvs
 * watt-32 git
 * newlib 4.3.0.20230120

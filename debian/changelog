@@ -1,8 +1,8 @@
 djgpp-toolchain (14) UNRELEASED; urgency=medium
 
-  * gdb version 16.1.
+  * gdb version 16.2.
 
- -- jwt27 <jwjagersma@gmail.com>  Tue, 01 Apr 2025 19:15:25 +0200
+ -- jwt27 <jwjagersma@gmail.com>  Tue, 01 Apr 2025 19:19:18 +0200
 
 djgpp-toolchain (13.1) unstable; urgency=medium
 
