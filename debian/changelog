@@ -1,4 +1,4 @@
-djgpp-toolchain (14) UNRELEASED; urgency=medium
+djgpp-toolchain (14) unstable; urgency=medium
 
   * gdb version 16.3.
   * binutils version 2.44.
