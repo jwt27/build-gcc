@@ -12,7 +12,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 ### Current package versions, as of 2025-11-11:
 
 * gcc 14.2.0
-* binutils 2.44
+* binutils 2.45
 * gdb 16.3
 * djgpp 2.05 / cvs
 * watt-32 git
