@@ -43,7 +43,7 @@ build_lib()
   fi
 }
 
-build_lib gmp
+CFLAGS+=" -std=gnu17" build_lib gmp
 build_lib mpfr --with-gmp="$TMPINST"
 build_lib mpc --with-gmp="$TMPINST" --with-mpfr="$TMPINST"
 build_lib isl --with-gmp=system --with-gmp-prefix="$TMPINST"
