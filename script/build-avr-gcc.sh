@@ -40,7 +40,9 @@ if [ ! -z ${GCC_VERSION} ]; then
 
   GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
                            --enable-languages=${ENABLE_LANGUAGES}
-                           --with-avrlibc ${WITH_LIBS}"
+                           --with-avrlibc
+                           --with-system-zlib
+                           ${WITH_LIBS}"
   strip_whitespace GCC_CONFIGURE_OPTIONS
 
   if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" == "${GCC_CONFIGURE_OPTIONS}" ]; then

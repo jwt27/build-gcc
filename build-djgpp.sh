@@ -226,10 +226,11 @@ if [ ! -z ${GCC_VERSION} ]; then
   export CFLAGS="$CFLAGS $GCC_EXTRA_CFLAGS"
   export CXXFLAGS="$CXXFLAGS $GCC_EXTRA_CXXFLAGS"
 
-  GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX}
+  GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
                            --enable-languages=${ENABLE_LANGUAGES}
-                           ${HOST_FLAG} ${BUILD_FLAG} ${WITH_LIBS}
-                           --with-native-system-header-dir=${PREFIX}/${TARGET}/sys-include"
+                           --with-native-system-header-dir=${PREFIX}/${TARGET}/sys-include
+                           --with-system-zlib
+                           ${WITH_LIBS}"
 
   if [ ! -z "${DESTDIR}" ]; then
     GCC_CONFIGURE_OPTIONS+=" --with-build-sysroot=${DESTDIR}"

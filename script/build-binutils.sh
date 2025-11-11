@@ -3,7 +3,8 @@ cd build-${TARGET} || exit 1
 
 echo "Building binutils"
 
-BINUTILS_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}"
+BINUTILS_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
+                             --with-system-zlib"
 strip_whitespace BINUTILS_CONFIGURE_OPTIONS
 
 if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" = "${BINUTILS_CONFIGURE_OPTIONS}" ]; then

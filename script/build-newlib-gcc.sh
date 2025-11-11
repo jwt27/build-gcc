@@ -32,7 +32,9 @@ if [ ! -z ${GCC_VERSION} ]; then
 
   GCC_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
                            --enable-languages=${ENABLE_LANGUAGES}
-                           --with-newlib ${WITH_LIBS}"
+                           --with-newlib
+                           --with-system-zlib
+                           ${WITH_LIBS}"
   strip_whitespace GCC_CONFIGURE_OPTIONS
 
   if [ ! -e configure-prefix ] || [ ! "`cat configure-prefix`" == "${GCC_CONFIGURE_OPTIONS}" ]; then
@@ -60,7 +62,8 @@ if [ ! -z ${NEWLIB_VERSION} ]; then
   mkdir -p newlib-${NEWLIB_VERSION}/build-${TARGET}
   cd newlib-${NEWLIB_VERSION}/build-${TARGET} || exit 1
 
-  NEWLIB_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}"
+  NEWLIB_CONFIGURE_OPTIONS+=" --target=${TARGET} --prefix=${PREFIX} ${HOST_FLAG} ${BUILD_FLAG}
+                             --with-system-zlib"
   strip_whitespace NEWLIB_CONFIGURE_OPTIONS
 
   if [ ! -z ${GCC_VERSION} ] || [ ! "`cat configure-options 2> /dev/null`" == "${NEWLIB_CONFIGURE_OPTIONS}" ]; then
