@@ -18,7 +18,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 * watt-32 git
 * newlib 4.3.0.20230120
 * avr-libc 2.2.1
-* avrdude 7.0
+* avrdude 8.1
 * avarice 2.14
 * simulavr git
 

@@ -1,0 +1,2 @@
+AVRDUDE_VERSION=8.0
+AVRDUDE_ARCHIVE=https://github.com/avrdudes/avrdude/releases/download/v8.0/avrdude-8.0.tar.gz
