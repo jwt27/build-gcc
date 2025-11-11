@@ -9,7 +9,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 * 2020-02-07: setenv script is now installed to `$PREFIX/bin/$TARGET-setenv`.
 * 2019-06-06: `master` is now the default branch again.
 
-### Current package versions, as of 2025-05-28:
+### Current package versions, as of 2025-11-11:
 
 * gcc 14.2.0
 * binutils 2.44
@@ -17,7 +17,7 @@ If you require compatibility with distributions that use `i586`, you can either:
 * djgpp 2.05 / cvs
 * watt-32 git
 * newlib 4.3.0.20230120
-* avr-libc 2.1.0
+* avr-libc 2.2.1
 * avrdude 7.0
 * avarice 2.14
 * simulavr git

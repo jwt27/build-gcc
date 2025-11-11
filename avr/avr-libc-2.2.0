@@ -1,0 +1,2 @@
+AVRLIBC_VERSION=2.2.0
+AVRLIBC_ARCHIVE=https://github.com/avrdudes/avr-libc/releases/download/avr-libc-2_2_0-release/avr-libc-2.2.0.tar.bz2
