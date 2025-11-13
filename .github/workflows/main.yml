@@ -61,7 +61,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test || :
           sudo apt-get update || :
-          sudo apt-get install bison flex curl make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip dos2unix libtool-bin gcc-11 g++-11 cmake help2man python3-dev nasm libslang2-dev ccache
+          sudo apt-get install bison flex curl make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip dos2unix libtool-bin gcc-15 g++-15 cmake help2man python3-dev nasm libslang2-dev ccache
 
       - name: Install dependencies (macos)
         if: contains(matrix.os, 'macos')
