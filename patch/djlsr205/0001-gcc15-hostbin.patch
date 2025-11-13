@@ -1,0 +1,13 @@
+diff --git a/src/djasm/djasm.y b/src/djasm/djasm.y
+index 5657b990..1044b995 100644
+--- a/src/djasm/djasm.y
++++ b/src/djasm/djasm.y
+@@ -179,7 +179,7 @@ void emits(Symbol *s, int offset, int rel);
+ void modrm(int mod, int reg, int rm);
+ void reg(int reg);
+ void addr32(int sib);
+-void sortsyms();
++void sortsyms(int (*)(void const *, void const *));
+
+ int istemp(char *symname, char which);
+ int islocal(char *symname);
