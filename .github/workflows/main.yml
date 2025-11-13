@@ -57,21 +57,31 @@ jobs:
 
       - name: Install dependencies (ubuntu)
         if: contains(matrix.os, 'ubuntu')
+        continue-on-error: true
         run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test || :
+          sudo apt-get update || :
           sudo apt-get install bison flex curl make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip dos2unix libtool-bin gcc-11 g++-11 cmake help2man python3-dev nasm libslang2-dev ccache
+
+      - name: Install dependencies (macos)
+        if: contains(matrix.os, 'macos')
+        continue-on-error: true
+        run: |
+          brew update || :
+          brew install --formula bash curl make texinfo gzip xz dos2unix libtool cmake help2man nasm s-lang ccache
+
+      - name: Setup environment (ubuntu)
+        if: contains(matrix.os, 'ubuntu')
+        run: |
           echo "CC=gcc-15" >> $GITHUB_ENV
           echo "CXX=g++-15" >> $GITHUB_ENV
           mkdir -p $HOME/.ccache
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           echo "/usr/lib/ccache" >> $GITHUB_PATH
 
-      - name: Install dependencies (macos)
+      - name: Setup environment (macos)
         if: contains(matrix.os, 'macos')
         run: |
-          brew update -q
-          brew install -q --formula bash curl make texinfo gzip xz dos2unix libtool cmake help2man nasm s-lang ccache
           mkdir -p $HOME/.ccache
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           echo "$(brew --prefix)/opt/ccache/libexec" >> $GITHUB_PATH
