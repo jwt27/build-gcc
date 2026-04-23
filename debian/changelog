@@ -1,8 +1,8 @@
 djgpp-toolchain (15) UNRELEASED; urgency=medium
 
-  * binutils version 2.45.
+  * binutils version 2.46.0.
 
- -- jwt27 <jwjagersma@gmail.com>  Tue, 11 Nov 2025 22:03:54 +0100
+ -- jwt27 <jwjagersma@gmail.com>  Thu, 23 Apr 2026 22:45:19 +0200
 
 djgpp-toolchain (14) unstable; urgency=medium
 
