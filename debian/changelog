@@ -1,8 +1,9 @@
 djgpp-toolchain (15) UNRELEASED; urgency=medium
 
+  * gdb version 17.1.
   * binutils version 2.46.0.
 
- -- jwt27 <jwjagersma@gmail.com>  Thu, 23 Apr 2026 22:45:19 +0200
+ -- jwt27 <jwjagersma@gmail.com>  Thu, 23 Apr 2026 22:46:47 +0200
 
 djgpp-toolchain (14) unstable; urgency=medium
 
