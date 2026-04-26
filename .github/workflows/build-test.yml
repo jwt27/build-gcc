@@ -2,7 +2,9 @@ name: Test builds
 
 on:
   push:
-    branches-ignore: djgpp-ppa
+    branches-ignore:
+      - djgpp-ppa
+      - build-static
   pull_request:
 
 jobs:
