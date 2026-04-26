@@ -65,11 +65,4 @@ jobs:
           include-hidden-files: true
 
       - name: Clear and pack git sources before caching
-        run: |
-          find download/*/* ! -wholename '*/.git/*' -delete || true
-          cd download
-          for DIR in */; do
-            DIR=${DIR%/}
-            tar -c -f $DIR-git.tar $DIR
-          done
-          rm -rf */
+        run: /bin/bash ./script/ci/clean.sh
