@@ -6,10 +6,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ ubuntu-latest ]
         env:
           -
             TARGET: i386-pc-msdosdjgpp
@@ -48,20 +49,20 @@ jobs:
         env:
           TARGET: ${{ matrix.env.TARGET }}
           PACKAGES: ${{ matrix.env.PACKAGES }}
-        run: ./script/select-script.sh --only-download
+        run: ./script/ci/build.sh --only-download
 
       - name: Build
         env:
           TARGET: ${{ matrix.env.TARGET }}
           PACKAGES: ${{ matrix.env.PACKAGES }}
           LDFLAGS: -static
-        run: ./script/select-script.sh --no-download
+        run: ./script/ci/build.sh --no-download
 
       - name: Save installed files
         uses: actions/upload-artifact@v7
         with:
           name: install-static_${{ matrix.os }}_${{ matrix.env.TARGET }}_${{ matrix.env.PACKAGES }}
-          path: install/tmp/cross/
+          path: install/tmp/
           include-hidden-files: true
 
       - name: Clear and pack git sources before caching
