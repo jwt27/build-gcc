@@ -8,4 +8,11 @@ avr)          SCRIPT=./build-avr.sh ;;
 *)            SCRIPT=./build-newlib.sh ;;
 esac
 
-${SCRIPT} --batch --target=${TARGET} ${PACKAGES} "$@"
+export LDFLAGS=-static
+
+exec ${SCRIPT} \
+  --batch \
+  --target=${TARGET} \
+  --prefix=/tmp/cross \
+  --destdir="$(pwd)/install" \
+  ${PACKAGES} "$@"

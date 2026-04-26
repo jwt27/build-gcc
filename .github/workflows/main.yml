@@ -111,7 +111,24 @@ jobs:
       - name: Build
         env:
           TARGET: ${{ matrix.env.TARGET }}
-        run: ./script/select-script.sh --no-download --prefix=${{ github.workspace }}-${{ github.sha }} ${{ matrix.env.PACKAGES }}
+          PACKAGES: ${{ matrix.env.PACKAGES }}
+        run: ./script/select-script.sh --no-download
+
+      - name: Save installed files
+        uses: actions/upload-artifact@v7
+        with:
+          name: install-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}
+          path: install/tmp/cross/
+          include-hidden-files: true
+
+      - name: Save build files
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: build-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}
+          path: build/
+          include-hidden-files: true
+          retention-days: 3
 
       - name: Clear and pack git sources before caching
         run: |
