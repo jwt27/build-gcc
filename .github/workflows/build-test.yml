@@ -41,50 +41,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Clear brew package cache
-        if: contains(matrix.os, 'macos')
-        run: |
-          rm -rf $(brew --cache)
-
-      - name: Cache brew package cache
-        uses: actions/cache@v5
-        if: contains(matrix.os, 'macos')
-        with:
-          path: ~/Library/Caches/Homebrew
-          key: testbuild-brew-cache-${{ github.sha }}
-          restore-keys: |
-            testbuild-brew-cache-
-
       - name: Install dependencies (ubuntu)
         if: contains(matrix.os, 'ubuntu')
         continue-on-error: true
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test || :
-          sudo apt-get update || :
-          sudo apt-get install bison flex curl make texinfo zlib1g-dev tar bzip2 gzip xz-utils unzip dos2unix libtool-bin gcc-13 g++-13 cmake help2man python3-dev nasm libslang2-dev ccache
+        run: ./script/ci/deps-ubuntu.sh
 
       - name: Install dependencies (macos)
         if: contains(matrix.os, 'macos')
         continue-on-error: true
-        run: |
-          brew update || :
-          brew install --formula bash curl make texinfo gzip xz dos2unix libtool cmake help2man nasm s-lang ccache
-
-      - name: Setup environment (ubuntu)
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          echo "CC=gcc-13" >> $GITHUB_ENV
-          echo "CXX=g++-13" >> $GITHUB_ENV
-          mkdir -p $HOME/.ccache
-          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-          echo "/usr/lib/ccache" >> $GITHUB_PATH
-
-      - name: Setup environment (macos)
-        if: contains(matrix.os, 'macos')
-        run: |
-          mkdir -p $HOME/.ccache
-          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-          echo "$(brew --prefix)/opt/ccache/libexec" >> $GITHUB_PATH
+        run: ./script/ci/deps-macos.sh
 
       - name: Cache sources
         uses: actions/cache@v5
@@ -106,18 +71,18 @@ jobs:
         env:
           TARGET: ${{ matrix.env.TARGET }}
           PACKAGES: ${{ matrix.env.PACKAGES }}
-        run: ./script/select-script.sh --only-download
+        run: ./script/ci/build.sh --only-download
 
       - name: Build
         env:
           TARGET: ${{ matrix.env.TARGET }}
           PACKAGES: ${{ matrix.env.PACKAGES }}
-        run: ./script/select-script.sh --no-download
+        run: ./script/ci/build.sh --no-download
 
       - name: Save installed files
         uses: actions/upload-artifact@v7
         with:
-          name: install-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}
+          name: install_${{ matrix.os }}_${{ matrix.env.TARGET }}_${{ matrix.env.PACKAGES }}
           path: install/tmp/cross/
           include-hidden-files: true
 
@@ -125,17 +90,10 @@ jobs:
         uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: build-${{ matrix.os }}-${{ matrix.env.TARGET }}-${{ matrix.env.PACKAGES }}
+          name: build_${{ matrix.os }}_${{ matrix.env.TARGET }}_${{ matrix.env.PACKAGES }}
           path: build/
           include-hidden-files: true
           retention-days: 3
 
       - name: Clear and pack git sources before caching
-        run: |
-          find download/*/* ! -wholename '*/.git/*' -delete || true
-          cd download
-          for DIR in */; do
-            DIR=${DIR%/}
-            tar -c -f $DIR-git.tar $DIR
-          done
-          rm -rf */
+        run: /bin/bash ./script/ci/clean.sh

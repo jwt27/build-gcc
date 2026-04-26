@@ -8,8 +8,6 @@ avr)          SCRIPT=./build-avr.sh ;;
 *)            SCRIPT=./build-newlib.sh ;;
 esac
 
-export LDFLAGS=-static
-
 exec ${SCRIPT} \
   --batch \
   --target=${TARGET} \
