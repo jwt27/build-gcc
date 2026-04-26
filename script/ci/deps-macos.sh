@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -xe
 
 brew update || :
 brew install --formula \
