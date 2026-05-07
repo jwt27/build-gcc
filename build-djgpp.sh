@@ -258,6 +258,10 @@ if [ ! -z ${GCC_VERSION} ]; then
   CXXFLAGS="$TEMP_CXXFLAGS"
 fi
 
+if [ ! -z "$(get_version gcc)" ]; then
+  ${TARGET}-gcc -dumpspecs > ${BASE}/build/specs || exit 1
+fi
+
 if [ ! -z ${DJGPP_VERSION} ]; then
   echo "Building djgpp libc"
   cd ${BASE}/build/djgpp-${DJGPP_VERSION}/src
@@ -296,8 +300,7 @@ if [ ! -z ${WATT32_VERSION} ]; then
   ${SUDO} mkdir -p ${DST}/${TARGET}/watt/inc || exit 1
   ${SUDO} mkdir -p ${DST}/${TARGET}/watt/lib || exit 1
   install_files ../lib/libwatt.a ${DST}/${TARGET}/watt/lib/ || exit 1
-  ${SUDO} ln -fs ../watt/lib/libwatt.a ${DST}/${TARGET}/lib/libwatt.a || exit 1
-  ${SUDO} ln -fs libwatt.a ${DST}/${TARGET}/lib/libsocket.a || exit 1
+  ${SUDO} ln -fs libwatt.a ${DST}/${TARGET}/watt/lib/libsocket.a || exit 1
   install_files ../inc/* ${DST}/${TARGET}/watt/inc/ || exit 1
 
   set_version watt32

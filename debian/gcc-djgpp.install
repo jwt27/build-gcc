@@ -1,4 +1,5 @@
 usr/lib/gcc/i*86-pc-msdosdjgpp/*
+usr/i*86-pc-msdosdjgpp/lib/*.specs
 usr/i*86-pc-msdosdjgpp/bin/g++
 usr/i*86-pc-msdosdjgpp/bin/gcc-nm
 usr/i*86-pc-msdosdjgpp/bin/c++

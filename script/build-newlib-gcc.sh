@@ -55,6 +55,10 @@ if [ ! -z ${GCC_VERSION} ]; then
   CXXFLAGS="$TEMP_CXXFLAGS"
 fi
 
+if [ ! -z "$(get_version gcc)" ]; then
+  ${TARGET}-gcc -dumpspecs > ${BASE}/build/specs || exit 1
+fi
+
 cd ${BASE}/build/
 
 if [ ! -z ${NEWLIB_VERSION} ]; then

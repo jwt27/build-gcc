@@ -125,14 +125,10 @@ echo "Creating install directory: ${DST}"
 
 export PATH="${DST}/bin:${PREFIX}/bin:$PATH"
 
-if which ${TARGET}-gcc 2>&1 > /dev/null; then
-  echo "Removing previously-installed specs file"
-  for i in {"${DST}","${PREFIX}"}/lib/gcc/${TARGET}/$(${TARGET}-gcc -dumpversion)/specs; do
-    if [ -e "$i" ]; then
-      ${SUDO} rm -f "$i" || exit 1
-    fi
-  done
-fi
+${TARGET}-gcc -dumpspecs 1> ${BASE}/build/specs 2> /dev/null
+: > ${BASE}/build/no-local.specs
+export   CFLAGS_FOR_TARGET+=" -specs=${BASE}/build/specs -specs=${BASE}/build/no-local.specs"
+export CXXFLAGS_FOR_TARGET+=" -specs=${BASE}/build/specs -specs=${BASE}/build/no-local.specs"
 
 rm -rf ${BASE}/tests
 mkdir -p ${BASE}/tests

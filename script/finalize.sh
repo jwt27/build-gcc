@@ -17,6 +17,55 @@ if [ ! -z ${GCC_VERSION} ]; then
 fi
 popd
 
+if_not_usr_local()
+{
+  if [ "${PREFIX}" != '/usr/local' ]; then
+    echo -n "$@"
+  fi
+}
+
+cat <<- END >> ${BASE}/build/specs
+*self_spec:
++ %(site_include) %(site_link)
+
+*site_include:
+%(local_include) %(watt_include)
+
+*site_link:
+%(local_link) %(watt_link)
+
+*local_include:
+%{!nostdinc:-I${PREFIX}/${TARGET}/local/include} $(if_not_usr_local %{!nostdinc:-I/usr/local/${TARGET}/include})
+
+*local_link:
+-L${PREFIX}/${TARGET}/local/lib $(if_not_usr_local -L/usr/local/${TARGET}/lib)
+
+*watt_include:
+%{!nostdinc:-isystem ${PREFIX}/${TARGET}/watt/inc}
+
+*watt_link:
+-L${PREFIX}/${TARGET}/watt/lib
+
+END
+
+cat <<- END > ${BASE}/build/no-local.specs
+*local_include:
+
+
+*local_link:
+
+
+END
+
+cat <<- END > ${BASE}/build/no-watt.specs
+*watt_include:
+
+
+*watt_link:
+
+
+END
+
 cat << STOP > ${BASE}/build/${TARGET}-setenv
 #!/usr/bin/env bash
 case "\$1" in
@@ -59,40 +108,16 @@ case $TARGET in
   ;;
 esac
 
-prepend_specs()
-{
-  sed -i "/\*$1:/{n;s#\(.*\)#$2 \1#}" ${BASE}/build/specs
-}
-
-if [ ! -z "$(get_version gcc)" ]; then
-  ${TARGET}-gcc -dumpspecs > ${BASE}/build/specs
-fi
-
 if [ ! -z "$(get_version watt32)" ]; then
   WATT_ROOT="${PREFIX}/${TARGET}/watt"
-  WATT_INCLUDE="${WATT_ROOT}/inc"
   echo "export WATT_ROOT=\"${WATT_ROOT}\"" >> ${BASE}/build/${TARGET}-setenv
   case $(uname) in
   MSYS*|MINGW*)
     WATT_ROOT="$(cygpath -m "$WATT_ROOT")"
-    WATT_INCLUDE="$(cygpath -m "$WATT_INCLUDE")"
     ;;
   esac
   echo "set WATT_ROOT=${WATT_ROOT}" >> ${BASE}/build/${TARGET}-setenv.cmd
 
-  for i in cpp cc1plus; do
-    prepend_specs $i "-isystem ${WATT_INCLUDE}"
-  done
-fi
-
-if [ ! -z "$(get_version gcc)" ]; then
-  for i in cpp cc1plus; do
-    prepend_specs $i "-I${PREFIX}/${TARGET}/local/include"
-  done
-  prepend_specs link "-L${PREFIX}/${TARGET}/local/lib"
-
-  echo "Installing specs file"
-  install_files ${BASE}/build/specs ${DST}/lib/gcc/${TARGET}/$(${TARGET}-gcc -dumpversion)/ || exit 1
 fi
 
 cat << STOP >> ${BASE}/build/${TARGET}-setenv
@@ -105,6 +130,11 @@ if [ -z "\$BASH_VERSION" ] || [ "\${BASH_SOURCE[0]}" = "\$0" ]; then
   fi
 fi
 echo 'Environment variables set up for target: ${TARGET}' >&2
+STOP
+
+cat << STOP > ${BASE}/build/${TARGET}-pkg-config
+#!/usr/bin/env bash
+exec ${TARGET}-setenv pkg-config "\$@"
 STOP
 
 case $TARGET in
@@ -122,10 +152,11 @@ STOP
   ;;
 esac
 
-cat << STOP > ${BASE}/build/${TARGET}-pkg-config
-#!/usr/bin/env bash
-exec ${TARGET}-setenv pkg-config "\$@"
-STOP
+if [ ! -z "$(get_version gcc)" ]; then
+  echo "Installing specs files"
+  install_files ${BASE}/build/specs ${DST}/lib/gcc/${TARGET}/$(${TARGET}-gcc -dumpversion)/ || exit 1
+  install_files ${BASE}/build/{no-local,no-watt}.specs ${DST}/${TARGET}/lib/ || exit 1
+fi
 
 echo "Installing ${TARGET}-setenv"
 chmod +x ${BASE}/build/${TARGET}-setenv
