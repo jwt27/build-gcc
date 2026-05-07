@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: install-static_${{ matrix.os }}_${{ matrix.env.TARGET }}_${{ matrix.env.PACKAGES }}
-          path: install/tmp/
+          path: install/opt/
           include-hidden-files: true
 
       - name: Clear and pack git sources before caching

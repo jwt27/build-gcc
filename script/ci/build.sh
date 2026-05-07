@@ -11,6 +11,6 @@ esac
 exec ${SCRIPT} \
   --batch \
   --target=${TARGET} \
-  --prefix=/tmp/cross \
+  --prefix=/opt/cross \
   --destdir="$(pwd)/install" \
   ${PACKAGES} "$@"
